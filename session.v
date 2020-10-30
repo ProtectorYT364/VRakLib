@@ -18,8 +18,7 @@ enum State {
 
 struct TmpMapEncapsulatedPacket {
 mut:
-    //m map[string]EncapsulatedPacket
-    m map[]EncapsulatedPacket
+    m map[string]EncapsulatedPacket
 }
 
 struct Session {
@@ -54,15 +53,12 @@ mut:
     // packet_to_send 
     is_active bool // false
 
-    //ack_queue map[string]u32
-    //nack_queue map[string]u32
     ack_queue map[]u32
-    nack_queue map[]u32
+    nack_queue map[string]u32
 
     // recovery_queue map
 
-    //split_packets map[string]TmpMapEncapsulatedPacket
-    split_packets map[]TmpMapEncapsulatedPacket
+    split_packets map[string]TmpMapEncapsulatedPacket
 
     need_ack [][]int
 
@@ -75,8 +71,7 @@ mut:
     reliable_window_start int
     reliable_window_end int
 
-    //reliable_window map[string]bool
-    reliable_window map[]bool
+    reliable_window map[string]bool
 
     last_ping_time // -1
     last_ping_measure // 1
@@ -389,7 +384,7 @@ fn (s mut Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
         }
         else if pid == NewIncomingConnection {
             mut connection := NewIncomingConnectionPacket { p: new_packet(packet.buffer, u32(packet.length)) }
-            connection.decode();
+            connection.decode()
 
             if connection.address.port == s.session_manager.get_port() || s.session_manager.port_checking() {
                 s.state = .connected
@@ -398,7 +393,7 @@ fn (s mut Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
                 //
             }
 
-            }
+            //}
         }
     }
 }
