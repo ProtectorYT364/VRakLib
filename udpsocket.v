@@ -37,16 +37,14 @@ fn (s Socket) receive() ?Packet {
 
     return Packet {
         buffer: new_bytebuffer(bytes, u32(res))
-        ip: ip
-        port: port
+        address: InternetAddress { ip: tos(ip, 16), port: u16(addr.sin_port), version: byte(4) }
     }
 }
 
 fn (s Socket) send(packet DataPacketHandler, p Packet) ?int {
     mut addr := C.sockaddr_in{}
-    addr.sin_family = s.family
-    addr.sin_port = p.port
-    C.inet_pton(C.AF_INET, p.ip.str, &addr.sin_addr)//TODO look up what this is
+    addr.sin_port = int(p.address.port)
+    C.inet_pton(C.AF_INET, p.address.ip.str, &addr.sin_addr)//TODO look up what this is
 
     buffer := p.buffer.buffer
     length := p.buffer.length

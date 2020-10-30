@@ -21,6 +21,11 @@ mut:
     m map[string]EncapsulatedPacket
 }
 
+struct TmpMapInt {
+mut:
+    m map[string]int
+}
+
 struct Session {
 mut:
     message_index int
@@ -79,9 +84,32 @@ mut:
     internal_id int
 }
 
+fn new_session(session_manager SessionManager, address InternetAddress, client_id u64, mtu_size u16, internal_id int) Session {
+    println('$address.ip, $address.port, $client_id, $mtu_size, $internal_id')
+    session := Session {
+        send_ordered_index: [0].repeat(channel_count)
+        send_sequenced_index: [0].repeat(channel_count)
+
+        receive_ordered_index: [0].repeat(channel_count)
+        receive_sequenced_highest_index: [0].repeat(channel_count)
+
+        receive_ordered_packets: [[]EncapsulatedPacket].repeat(channel_count)
+
+        session_manager: session_manager
+        address: address
+        mtu_size: mtu_size
+        id: client_id
+
+        send_queue_data: Datagram { sequence_number: -1 }
+
+        internal_id: internal_id
+    }
+    return session
+}
+
 fn (mut s Session) update() {
     diff := s.highest_seq_number - s.window_start + u32(1)
-    //assert diff >= u32(0)
+    assert diff >= u32(0)
 
     if diff > u32(0) {
         s.window_start += diff
@@ -98,9 +126,9 @@ fn (mut s Session) update() {
         //s.nack_queue = map[string]int{}
     }
 
-    if s.need_ack.len > 0 {
+    if s.need_ack.size > 0 {
         for i, ack in s.need_ack {
-            if ack.len == 0 {
+            if ack.m.size == 0 {
                 s.need_ack[i]
                 //s.session_manager.notify_ack(s, i)
             }
@@ -110,25 +138,34 @@ fn (mut s Session) update() {
     s.send_queue()
 }
 
-fn (s Session) send_datagram(datagram Datagram) {
+fn (mut s Session) send_datagram(datagram Datagram) {
     mut d := datagram
 
-    if datagram.sequence_number != u32(-1) {
-        //s.recovery_queue.delete(datagram.seq_number.str())
+    if datagram.sequence_number != -1 {
+        s.recovery_queue.delete(datagram.sequence_number.str())
     }
-    d.sequence_number = s.send_seq_number
+    d.sequence_number = int(s.send_seq_number)
     s.send_seq_number++
+    s.recovery_queue[d.sequence_number.str()] = datagram
     s.send_packet(d, d.p)
 }
 
 fn (s Session) send_packet(packet DataPacketHandler, p Packet) {
-    s.session_manager.send_packet(packet, p)
+    mut pp := p
+    pp.address = s.address
+    s.session_manager.send_packet(packet, pp)
+}
+
+fn (s Session) send_ping(reliability int) {
+    //packet := connected_ping {}
+    //packet.send_ping_time = s.session_manager.get_raknet_time_ms()
+    //s.queue_connected_packet(packet.p, reliability, 0, priority_immediate)
 }
 
 fn (mut s Session) send_queue() {
     if s.send_queue_data.packets.len > 0 {
         s.send_datagram(s.send_queue_data)
-        s.send_queue_data = Datagram {}
+        s.send_queue_data = Datagram { sequence_number: -1 }
     }
 }
 
@@ -146,23 +183,23 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
     mut p := packet
     priority := flags & 0x07
     if p.need_ack && p.message_index != -1 {
-        mut arr := s.need_ack[p.identifier_ack]
-        arr[p.message_index] = p.message_index
+        mut arr := s.need_ack[p.identifier_ack.str()]
+        arr.m[p.message_index.str()] = p.message_index
     }
 
     length := s.send_queue_data.get_total_length()
-    //if length + p.get_length() > s.mtu_size - 36 {
-        //s.send_queue()
-    //}
+    if u32(length) + p.get_length() > u32(s.mtu_size - u16(36)) {
+        s.send_queue()
+    }
 
     if p.need_ack {
         s.send_queue_data.packets << p
         p.need_ack = false
     } else {
-        //s.send_queue_data.packets << p.to_binary()
+        s.send_queue_data.packets << p
     }
 
-    if priority == PriorityImmediate {
+    if priority == priority_immediate {
         s.send_queue()
     }
 }
@@ -171,9 +208,10 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
     mut p := packet
     p.need_ack = (flags & 0x09) != 0
     println(p.need_ack)
-    //if p.need_ack {
-    //    s.need_ack[p.identifier_ack] = map[string]int
-    //}
+
+    if p.need_ack {
+        s.need_ack[p.identifier_ack.str()] = TmpMapInt {}
+    }
 
     if reliability_is_ordered(p.reliability) {
         p.order_index = s.send_ordered_index[p.order_channel]
@@ -184,24 +222,58 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
         s.send_sequenced_index[p.order_channel] += 1
     }
 
-    //max_size := mtu_size
-    //if packet.length > max_size {
+    max_size := u16(s.mtu_size) - u16(60)
+    if p.length > max_size {
+        mut buffers := []byte{}
+        packet_buffers := tos(p.buffer, int(p.length))
 
-    //} else if {
+        mut buffer_count := 0
+        mut offset := u16(0)
+        for offset < p.length {
+            if offset + max_size > p.length {
+                buffers << packet_buffers.substr(int(offset), packet_buffers.len - 1).bytes()
+            } else {
+                buffers << packet_buffers.substr(int(offset), int(offset + max_size)).bytes()
+            }
+            offset += max_size
+            buffer_count++
+        }
+
+        split_id := s.split_id % 65536
+        for count, buffer in buffers {
+            mut encapsulated_packet := EncapsulatedPacket {}
+            encapsulated_packet.split_id = u16(split_id)
+            encapsulated_packet.has_split = true
+            encapsulated_packet.split_count = buffer_count
+            encapsulated_packet.reliability = p.reliability
+            encapsulated_packet.split_index = count
+            encapsulated_packet.buffer = buffer
+
+            if reliability_is_reliable(p.reliability) {
+                encapsulated_packet.message_index = s.message_index
+                s.message_index++
+            }
+
+            encapsulated_packet.sequence_index = p.sequence_index
+            encapsulated_packet.order_channel = p.order_channel
+            encapsulated_packet.order_index = p.order_index
+            s.add_to_queue(encapsulated_packet, flags | priority_immediate)
+        }
+    } else {
         if reliability_is_reliable(p.reliability) {
             p.message_index = s.message_index
             s.message_index++
         }
         s.add_to_queue(p, flags)
-    //}
+    }
 }
 
 fn (mut s Session) handle_packet(packet Datagram) {
     mut p := packet
     p.decode()
 
-    if p.sequence_number < s.window_start ||
-        p.sequence_number > s.window_end ||
+    if u32(p.sequence_number) < s.window_start ||
+        u32(p.sequence_number) > s.window_end ||
         p.sequence_number.str() in s.ack_queue {
             // Received duplicate or out-of-window packet
             return
@@ -210,13 +282,13 @@ fn (mut s Session) handle_packet(packet Datagram) {
     if p.sequence_number.str() in s.nack_queue {
        s.nack_queue.delete(p.sequence_number.str())
     }
-    s.ack_queue[p.sequence_number.str()] = p.sequence_number
+    s.ack_queue[p.sequence_number.str()] = u32(p.sequence_number)
 
-    if s.highest_seq_number < p.sequence_number {
-        s.highest_seq_number = p.sequence_number
+    if s.highest_seq_number < u32(p.sequence_number) {
+        s.highest_seq_number = u32(p.sequence_number)
     }
 
-    if p.sequence_number == s.window_start {
+    if u32(p.sequence_number) == s.window_start {
         for {
             if s.window_start.str() in s.ack_queue {
                 s.window_end++
@@ -225,9 +297,9 @@ fn (mut s Session) handle_packet(packet Datagram) {
                 break
             }
         }
-    } else if p.sequence_number > s.window_start {
+    } else if u32(p.sequence_number) > s.window_start {
         mut i := s.window_start
-        for i < p.sequence_number {
+        for i < u32(p.sequence_number) {
             if !(i.str() in s.ack_queue) {
                 s.nack_queue[i.str()] = i
             }
@@ -243,16 +315,15 @@ fn (mut s Session) handle_packet(packet Datagram) {
     }
 }
 
-// max split size = 128
 fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
-    if packet.split_count >= 128 ||
-        packet.split_index >= 128 ||
+    if packet.split_count >= max_split_size ||
+        packet.split_index >= max_split_size ||
         packet.split_index < 0 {
             return error('Invalid split packet part')
     }
 
     if !(packet.split_id.str() in s.split_packets) {
-        if s.split_packets.size >= 128 {
+        if s.split_packets.size >= max_split_size {
             return error('Invalid split packet part')
         }
         mut tmp := TmpMapEncapsulatedPacket{}
@@ -317,9 +388,8 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
         p = pp
     }
 
-    // channel count = 32
     if reliability_is_sequenced_or_ordered(packet.reliability) &&
-        (packet.order_channel < 0 || packet.order_channel >= 32) {
+        (packet.order_channel < 0 || packet.order_channel >= channel_count) {
             // Invalid packet
             return
     }
@@ -366,34 +436,41 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
     pid := packet.buffer[0]
 
-    if pid < user_packet_enum {
-        if pid == connection_request {
-            mut connection := ConnectionRequestPacket { p: new_packet(packet.buffer, u32(packet.length)) }
-            connection.decode()
+    if pid < id_user_packet_enum {
+        if s.state == .connecting {
+            if pid == id_connection_request {
+                mut connection := ConnectionRequest { p: new_packet(packet.buffer, u32(packet.length)) }
+                connection.decode()
 
-            mut accepted := ConnectionRequestAcceptedPacket {
-                p: new_packet([byte(0)].repeat(96).data, u32(96))
-                ping_time: connection.ping_time
-                pong_time: s.session_manager.get_raknet_time_ms()
+                mut accepted := ConnectionRequestAccepted {
+                    p: new_packet([byte(0)].repeat(96).data, u32(96))
+                    ping_time: connection.ping_time
+                    pong_time: s.session_manager.get_raknet_time_ms() // TODO
+                }
+                accepted.encode()
+                accepted.p.address = connection.p.address
+
+                s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
+            } else if pid == id_new_incoming_connection {
+                mut connection := NewIncomingConnection { p: new_packet(packet.buffer, u32(packet.length)) }
+                connection.decode()
+
+                if connection.address.port == u16(19132) || !s.session_manager.port_checking {
+                    s.state = .connected
+                    s.is_temporal = false
+                    //s.session_manager.open_session(s)
+                    //s.send_ping(reliability_unreliable)
+                }
+                println('NEW INCOMING CONNECTION')
             }
-            accepted.encode()
-            accepted.p.ip = connection.p.ip
-            accepted.p.port = connection.p.port
+        } else if pid == id_connected_ping {
 
-            s.queue_connected_packet(accepted.p, Unreliable, 0, PriorityImmediate)
+        } else if pid == id_connected_pong {
+
         }
-        else if pid == new_incoming_connection {
-            mut connection := NewIncomingConnectionPacket { p: new_packet(packet.buffer, u32(packet.length)) }
-            connection.decode()
-
-            if connection.address.port == s.session_manager.get_port() || s.session_manager.port_checking() {
-                s.state = .connected
-                s.is_temporal = false
-                // s.session_manager.open
-                //
-            }
-
-            //}
-        }
+    } else if s.state == .connected {
+        s.session_manager.handle_encapsulated(s, packet)
+    } else {
+        // Received packet before connection
     }
 }

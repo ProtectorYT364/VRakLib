@@ -2,17 +2,24 @@ module vraklib
 
 struct SessionManager {
 mut:
-    socket Socket
-    sessions []Session
+    server VRakLib
+
+    socket UdpSocket
+    sessions map[string]Session
     session_by_address map[string]Session
 
     shutdown bool
 
     start_time_ms int
+
+    port_checking bool
+
+    next_session_id int
 }
 
-fn new_session_manager(socket Socket) &SessionManager {
+fn new_session_manager(server VRakLib, socket UdpSocket) &SessionManager {
     sm := &SessionManager {
+        server: server
         socket: socket
         start_time_ms: 0 // TODO
     }
@@ -39,14 +46,14 @@ fn (mut s SessionManager) receive_packet() {
     packet := s.socket.receive() or { return }
     pid := packet.buffer.buffer[0]
 
-    if s.session_exists(packet.ip, packet.port) {
-        mut session := s.get_session_by_address(packet.ip, packet.port)
+    if s.session_exists(packet.address) {
+        mut session := s.get_session_by_address(packet.address)
 
-        if (pid & BitflagValid) != 0 {
-            if (pid & BitflagAck) != 0 {
+        if (pid & bitflag_valid) != 0 {
+            if (pid & bitflag_ack) != 0 {
                 // ACK
                 println('ack')
-            } else if (pid & BitflagNak) != 0 {
+            } else if (pid & bitflag_nak) != 0 {
                 // NACK
                 println('nack')
             } else {
@@ -55,100 +62,106 @@ fn (mut s SessionManager) receive_packet() {
             }
         }
     } else {
-        if pid == un_connected_pong || pid == un_connected_pong2 {
-            mut ping := UnConnectedPingPacket { p: new_packet_from_packet(packet) }
+        if pid == id_un_connected_ping {
+            mut ping := un_connected_ping { p: new_packet_from_packet(packet) }
             ping.decode()
 
             title := 'MCPE;Minecraft V Server!;361;1.12.0;0;100;123456789;Test;Survival;'
             len := 35 + title.len
-            mut pong := UnConnectedPongPacket {
+            mut pong := un_connected_pong {
                 p: new_packet([byte(0)].repeat(len).data, u32(len))
                 server_id: 123456789
                 ping_id: ping.ping_id
                 str: title
             }
             pong.encode()
-            pong.p.ip = ping.p.ip
-            pong.p.port = ping.p.port
+            pong.p.address = ping.p.address
 
             s.socket.send(pong, pong.p)
-        } else if pid == open_connection_request1 {
-            mut request := Request1Packet { p: new_packet_from_packet(packet) }
+        } else if pid == id_open_connection_request1 {
+            mut request := open_connection_request1 { p: new_packet_from_packet(packet) }
             request.decode()
             
             if request.version != 9 {
-                mut incompatible := IncompatibleProtocolVersionPacket {
+                mut incompatible := incompatible_protocol_version {
                     p: new_packet([byte(0)].repeat(26).data, u32(26))
                     version: 9
                     server_id: 123456789
                 }
                 incompatible.encode()
-                incompatible.p.ip = request.p.ip
-                incompatible.p.port = request.p.port
+                incompatible.p.address = request.p.address
 
                 s.socket.send(incompatible, incompatible.p)
                 return
             }
 
-            mut reply := Reply1Packet {
+            mut reply := open_connection_reply1 {
                 p: new_packet([byte(0)].repeat(28).data, u32(28))
-                security: true
+                security: false
                 server_id: 123456789
-                mtu_size: request.mtu_size
+                mtu_size: request.mtu_size + u16(28)
             }
             reply.encode()
-            reply.p.ip = request.p.ip
-            reply.p.port = request.p.port
+            reply.p.address = request.p.address
 
             s.socket.send(reply, reply.p)
-        } else if pid == open_connection_request2 {
-            mut request := Request2Packet { p: new_packet_from_packet(packet) }
+        } else if pid == id_open_connection_request2 {
+            mut request := open_connection_request2 { p: new_packet_from_packet(packet) }
             request.decode()
 
-            mut reply := Reply2Packet {
-                p: new_packet([byte(0)].repeat(30).data, u32(30))
+            if request.mtu_size < u16(min_mtu_size) {
+                println('Not creating session for ${packet.address.ip} due to bad MTU size ${request.mtu_size}')
+                return
+            }
+
+            mut reply := open_connection_reply2 {
+                p: new_packet([byte(0)].repeat(35).data, u32(35))
                 server_id: 123456789
-                rport: request.rport
+                client_address: request.p.address
                 mtu_size: request.mtu_size
-                security: request.security
+                security: false
             }
             reply.encode()
-            reply.p.ip = request.p.ip
-            reply.p.port = request.p.port
+            reply.p.address = request.p.address
 
             s.socket.send(reply, reply.p)
-            s.create_session(request.p.ip, request.p.port)
+            s.create_session(request.p.address, request.client_id, request.mtu_size)
         }
     }
 }
 
-fn (s SessionManager) get_session_by_address(ip string, port int) Session {
-    return s.session_by_address['$ip:${port.str()}']
+fn (s SessionManager) get_session_by_address(address InternetAddress) Session {
+    return s.session_by_address['$address.ip:${address.port.str()}']
 }
 
-fn (s SessionManager) session_exists(ip string, port int) bool {
-    return '$ip:${port.str()}' in s.session_by_address
+fn (s SessionManager) session_exists(address InternetAddress) bool {
+    return '$address.ip:${address.port.str()}' in s.session_by_address
 }
 
-fn (mut s SessionManager) create_session(ip string, port int) &Session {
-    mut session := Session {
-        session_manager: s
-        ip: ip
-        port: port
-
-        send_ordered_index: [0].repeat(32)
-        send_sequenced_index: [0].repeat(32)
-
-        receive_ordered_index: [0].repeat(32)
-        receive_sequenced_highest_index: [0].repeat(32)
-
-        receive_ordered_packets: [[]EncapsulatedPacket{}].repeat(32)
+fn (mut s SessionManager) create_session(address InternetAddress, client_id u64, mtu_size u16) &Session {
+    for {
+        if s.next_session_id.str() in s.sessions {
+            s.next_session_id++
+            s.next_session_id &= 0x7fffffff
+        } else {
+            break
+        }
     }
-    s.sessions << session
-    s.session_by_address['$ip:${port.str()}'] = session
+
+    session := new_session(s, address, client_id, mtu_size, s.next_session_id)
+    s.sessions[s.next_session_id.str()] = session
+    s.session_by_address['$address.ip:${address.port.str()}'] = session
     return &session
 }
 
 fn (s SessionManager) send_packet(packet DataPacketHandler, p Packet) {
     s.socket.send(packet, p)
+}
+
+fn (mut s SessionManager) open_session(session Session) {
+    s.server.open_session(session.internal_id.str(), session.address, session.id)
+}
+
+fn (mut s SessionManager) handle_encapsulated(session Session, packet EncapsulatedPacket) {
+    s.server.handle_encapsulated(session.internal_id.str(), packet, priority_normal)
 }
