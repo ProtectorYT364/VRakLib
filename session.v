@@ -39,13 +39,13 @@ mut:
 
     state State // connecting
 
-    mtu_size int
-    id int
-    splid_id int // 0
+    mtu_size u16
+    id u64
+    split_id int // 0
     
     send_seq_number u32 // 0
 
-    last_update float f32
+    last_update f32
     disconnection_time f32
 
     is_temporal bool // true
@@ -53,16 +53,16 @@ mut:
     // packet_to_send 
     is_active bool // false
 
-    ack_queue map[]u32
+    ack_queue map[string]u32
     nack_queue map[string]u32
 
-    // recovery_queue map
+    recovery_queue map[string]Datagram
 
     split_packets map[string]TmpMapEncapsulatedPacket
 
-    need_ack [][]int
+    need_ack map[string]TmpMapInt
 
-    send_queue Datagram
+    send_queue_data Datagram
 
     window_start u32
     window_end u32
@@ -73,8 +73,8 @@ mut:
 
     reliable_window map[string]bool
 
-    last_ping_time // -1
-    last_ping_measure // 1
+    last_ping_time f32 // -1
+    last_ping_measure int // 1
 
     internal_id int
 }
