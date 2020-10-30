@@ -1,11 +1,11 @@
 module vraklib
 
 const (
-    MaxSplitSize = 128
-    MaxSplitCount = 4
-    ChannelCount = 32
+    max_split_size = 128
+    max_split_count = 4
+    channel_count = 32
     
-    MinMtuSize = 400
+    min_mtu_size = 400
     window_size = 2048 //should be mutable
 )
 
@@ -266,7 +266,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
     if s.split_packets[packet.split_id.str()].m.size == packet.split_count {
         mut p := EncapsulatedPacket {}
         
-        mut buffer := []byte
+        mut buffer := []byte{}
 
         p.reliability = packet.reliability
         p.message_index = packet.message_index

@@ -3,17 +3,17 @@ module vraklib
 import math
 
 const (
-    RaknetMagicLength = 16
+    raknet_magic_length = 16
 )
 
 const (
-    BitflagValid = 0x80
-    BitflagAck = 0x40
-    BitflagNak = 0x20
+    bitflag_valid = 0x80
+    bitflag_ack = 0x40
+    bitflag_nak = 0x20
 
-    BitflagPacketPair = 0x10
-    BitflagContinuousSend = 0x08
-    BitflagNeedsBAndAs = 0x04
+    bitflag_packet_pair = 0x10
+    bitflag_continuous_send = 0x08
+    bitflag_needs_b_and_as = 0x04
 )
 
 struct Packet {
@@ -75,7 +75,7 @@ mut:
 }
 
 fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
-    mut packets := []EncapsulatedPacket
+    mut packets := []EncapsulatedPacket{}
     mut packet := p
     for packet.buffer.position < packet.buffer.length {
         mut internal_packet := EncapsulatedPacket{}
@@ -163,7 +163,7 @@ fn (mut c Datagram) encode() {
     c.p.buffer.length = c.get_total_length()
     c.p.buffer.buffer = [byte(0)].repeat(int(c.get_total_length())).data
 
-    c.p.buffer.put_byte(byte(BitflagValid) | c.packet_id)
+    c.p.buffer.put_byte(byte(bitflag_valid) | c.packet_id)
     c.p.buffer.put_ltriad(int(c.sequence_number))
     for internal_packet in c.packets {
         packet := internal_packet.to_binary()

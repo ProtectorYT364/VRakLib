@@ -142,7 +142,7 @@ fn (mut s SessionManager) create_session(ip string, port int) &Session {
         receive_ordered_index: [0].repeat(32)
         receive_sequenced_highest_index: [0].repeat(32)
 
-        receive_ordered_packets: [[]EncapsulatedPacket].repeat(32)
+        receive_ordered_packets: [[]EncapsulatedPacket{}].repeat(32)
     }
     s.sessions << session
     s.session_by_address['$ip:${port.str()}'] = session

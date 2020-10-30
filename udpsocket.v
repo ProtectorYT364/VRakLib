@@ -1,16 +1,16 @@
 module vraklib
 
 import net
-import os
+//import os
 
 const (
-    Default_Buffer_Size = 8388608 // 1024 * 1024 * 8
+    default_buffer_size = 8388608 // 1024 * 1024 * 8
 )
 
 pub fn create_socket(ip string, port int) ?Socket {
 	s := net.socket_udp() or { panic(err) }
     // level, optname, optvalue
-    bufsize := Default_Buffer_Size
+    bufsize := default_buffer_size
     s.setsockopt(C.SOL_SOCKET, C.SO_RCVBUF, &bufsize)
     zero := 0
     s.setsockopt(C.SOL_SOCKET, C.SO_REUSEADDR, &zero)
@@ -20,8 +20,8 @@ pub fn create_socket(ip string, port int) ?Socket {
 }
 
 fn (s Socket) receive() ?Packet {
-    bufsize := Default_Buffer_Size
-	bytes := [Default_Buffer_Size]byte
+    bufsize := default_buffer_size
+	bytes := [default_buffer_size]byte{}
 
     size := 16
 
