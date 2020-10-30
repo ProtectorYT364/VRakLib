@@ -10,7 +10,7 @@ mut:
     shutdown bool
 }
 
-pub fn (r mut VRakLib) start() {
+pub fn (mut r VRakLib) start() {
     r.shutdown = false
 
     socket := create_socket(r.ip, int(r.port)) or { panic(err) }
@@ -20,6 +20,6 @@ pub fn (r mut VRakLib) start() {
     go session_manager.run()
 }
 
-pub fn (r mut VRakLib) stop() {
+pub fn (mut r VRakLib) stop() {
     r.shutdown = true
 }

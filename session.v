@@ -79,7 +79,7 @@ mut:
     internal_id int
 }
 
-fn (s mut Session) update() {
+fn (mut s Session) update() {
     diff := s.highest_seq_number - s.window_start + u32(1)
     //assert diff >= u32(0)
 
@@ -125,14 +125,14 @@ fn (s Session) send_packet(packet DataPacketHandler, p Packet) {
     s.session_manager.send_packet(packet, p)
 }
 
-fn (s mut Session) send_queue() {
+fn (mut s Session) send_queue() {
     if s.send_queue_data.packets.len > 0 {
         s.send_datagram(s.send_queue_data)
         s.send_queue_data = Datagram {}
     }
 }
 
-fn (s mut Session) queue_connected_packet(packet Packet, reliability byte, order_channel int, flag byte) {
+fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order_channel int, flag byte) {
     mut encapsulated := EncapsulatedPacket {
         buffer: packet.buffer.buffer
         length: u16(packet.buffer.length)
@@ -142,7 +142,7 @@ fn (s mut Session) queue_connected_packet(packet Packet, reliability byte, order
     s.add_encapsulated_to_queue(encapsulated, flag)
 }
 
-fn (s mut Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
+fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
     mut p := packet
     priority := flags & 0x07
     if p.need_ack && p.message_index != -1 {
@@ -167,7 +167,7 @@ fn (s mut Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
     }
 }
 
-fn (s mut Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags byte) {
+fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags byte) {
     mut p := packet
     p.need_ack = (flags & 0x09) != 0
     println(p.need_ack)
@@ -196,7 +196,7 @@ fn (s mut Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
     //}
 }
 
-fn (s mut Session) handle_packet(packet Datagram) {
+fn (mut s Session) handle_packet(packet Datagram) {
     mut p := packet
     p.decode()
 
@@ -244,7 +244,7 @@ fn (s mut Session) handle_packet(packet Datagram) {
 }
 
 // max split size = 128
-fn (s mut Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
+fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
     if packet.split_count >= 128 ||
         packet.split_index >= 128 ||
         packet.split_index < 0 {
@@ -289,7 +289,7 @@ fn (s mut Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
     return error('')
 }
 
-fn (s mut Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
+fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
     mut p := packet
     if p.message_index != -1 {
         if p.message_index < s.reliable_window_start ||
@@ -363,11 +363,11 @@ fn (s mut Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
     }
 }
 
-fn (s mut Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
+fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
     pid := packet.buffer[0]
 
-    if pid < UserPacketEnum {
-        if pid == ConnectionRequest {
+    if pid < user_packet_enum {
+        if pid == connection_request {
             mut connection := ConnectionRequestPacket { p: new_packet(packet.buffer, u32(packet.length)) }
             connection.decode()
 
@@ -382,7 +382,7 @@ fn (s mut Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 
             s.queue_connected_packet(accepted.p, Unreliable, 0, PriorityImmediate)
         }
-        else if pid == NewIncomingConnection {
+        else if pid == new_incoming_connection {
             mut connection := NewIncomingConnectionPacket { p: new_packet(packet.buffer, u32(packet.length)) }
             connection.decode()
 

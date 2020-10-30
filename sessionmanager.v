@@ -23,7 +23,7 @@ fn (s SessionManager) get_raknet_time_ms() i64 {
     return 0 - s.start_time_ms // TODO
 }
 
-fn (s mut SessionManager) run() {
+fn (mut s SessionManager) run() {
     for {
         if !s.shutdown {
             s.receive_packet()
@@ -35,7 +35,7 @@ fn (s mut SessionManager) run() {
     }
 }
 
-fn (s mut SessionManager) receive_packet() {
+fn (mut s SessionManager) receive_packet() {
     packet := s.socket.receive() or { return }
     pid := packet.buffer.buffer[0]
 
@@ -55,7 +55,7 @@ fn (s mut SessionManager) receive_packet() {
             }
         }
     } else {
-        if pid == UnConnectedPong || pid == UnConnectedPong2 {
+        if pid == un_connected_pong || pid == un_connected_pong2 {
             mut ping := UnConnectedPingPacket { p: new_packet_from_packet(packet) }
             ping.decode()
 
@@ -72,7 +72,7 @@ fn (s mut SessionManager) receive_packet() {
             pong.p.port = ping.p.port
 
             s.socket.send(pong, pong.p)
-        } else if pid == OpenConnectionRequest1 {
+        } else if pid == open_connection_request1 {
             mut request := Request1Packet { p: new_packet_from_packet(packet) }
             request.decode()
             
@@ -101,7 +101,7 @@ fn (s mut SessionManager) receive_packet() {
             reply.p.port = request.p.port
 
             s.socket.send(reply, reply.p)
-        } else if pid == OpenConnectionRequest2 {
+        } else if pid == open_connection_request2 {
             mut request := Request2Packet { p: new_packet_from_packet(packet) }
             request.decode()
 
@@ -130,7 +130,7 @@ fn (s SessionManager) session_exists(ip string, port int) bool {
     return '$ip:${port.str()}' in s.session_by_address
 }
 
-fn (s mut SessionManager) create_session(ip string, port int) &Session {
+fn (mut s SessionManager) create_session(ip string, port int) &Session {
     mut session := Session {
         session_manager: s
         ip: ip

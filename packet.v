@@ -153,13 +153,13 @@ fn (c Datagram) get_total_length() u32 {
     return total_length
 }
 
-fn (c mut Datagram) decode() {
+fn (mut c Datagram) decode() {
     c.packet_id = c.p.buffer.get_byte()
     c.sequence_number = u32(c.p.buffer.get_ltriad())
     c.packets = encapsulated_packet_from_binary(c.p)
 }
 
-fn (c mut Datagram) encode() {
+fn (mut c Datagram) encode() {
     c.p.buffer.length = c.get_total_length()
     c.p.buffer.buffer = [byte(0)].repeat(int(c.get_total_length())).data
 
