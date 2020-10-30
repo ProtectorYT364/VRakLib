@@ -93,7 +93,7 @@ fn new_session(session_manager SessionManager, address InternetAddress, client_i
         receive_ordered_index: [0].repeat(channel_count)
         receive_sequenced_highest_index: [0].repeat(channel_count)
 
-        receive_ordered_packets: [[]EncapsulatedPacket].repeat(channel_count)
+        receive_ordered_packets: [[]EncapsulatedPacket{}].repeat(channel_count)
 
         session_manager: session_manager
         address: address
