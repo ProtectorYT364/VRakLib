@@ -1,8 +1,10 @@
 module vraklib
 
+//import bstone
+
 struct VRakLib {
 mut:
-    server &Server
+    server &bstone.Server
 
     address InternetAddress
 
@@ -10,7 +12,7 @@ mut:
 
     shutdown bool
 
-    players map[string]Player
+    players map[string]bstone.Player
     identifiers map[string]string
 }
 
@@ -33,7 +35,7 @@ fn (r VRakLib) close_session() {
 }
 
 fn (mut r VRakLib) open_session(identifier string, address InternetAddress, client_id u64) {
-    player := new_player(r, r.server, address.ip, address.port)
+    player := bstone.new_player(r, r.server, address.ip, address.port)
     r.players[identifier] = player
     r.identifiers[player.hash_code().str()] = identifier
     r.server.add_player(player)
@@ -50,7 +52,7 @@ fn (r VRakLib) handle_encapsulated(identifier string, packet EncapsulatedPacket,
     }
 }
 
-fn (r VRakLib) put_packet(player Player, packet Packet, need_ack bool, immediate bool) {
+fn (r VRakLib) put_packet(player bstone.Player, packet Packet, need_ack bool, immediate bool) {
 
 }
 

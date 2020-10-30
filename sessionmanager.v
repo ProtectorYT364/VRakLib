@@ -68,7 +68,7 @@ fn (mut s SessionManager) receive_packet() {
 
             title := 'MCPE;Minecraft V Server!;361;1.12.0;0;100;123456789;Test;Survival;'
             len := 35 + title.len
-            mut pong := un_connected_pong {
+            mut pong := UnConnectedPong {
                 p: new_packet([byte(0)].repeat(len).data, u32(len))
                 server_id: 123456789
                 ping_id: ping.ping_id
@@ -79,11 +79,11 @@ fn (mut s SessionManager) receive_packet() {
 
             s.socket.send(pong, pong.p)
         } else if pid == id_open_connection_request1 {
-            mut request := open_connection_request1 { p: new_packet_from_packet(packet) }
+            mut request := OpenConnectionRequest1 { p: new_packet_from_packet(packet) }
             request.decode()
             
             if request.version != 9 {
-                mut incompatible := incompatible_protocol_version {
+                mut incompatible := IncompatibleProtocolVersion {
                     p: new_packet([byte(0)].repeat(26).data, u32(26))
                     version: 9
                     server_id: 123456789
@@ -95,7 +95,7 @@ fn (mut s SessionManager) receive_packet() {
                 return
             }
 
-            mut reply := open_connection_reply1 {
+            mut reply := OpenConnectionReply1 {
                 p: new_packet([byte(0)].repeat(28).data, u32(28))
                 security: false
                 server_id: 123456789
@@ -106,7 +106,7 @@ fn (mut s SessionManager) receive_packet() {
 
             s.socket.send(reply, reply.p)
         } else if pid == id_open_connection_request2 {
-            mut request := open_connection_request2 { p: new_packet_from_packet(packet) }
+            mut request := OpenConnectionRequest2 { p: new_packet_from_packet(packet) }
             request.decode()
 
             if request.mtu_size < u16(min_mtu_size) {
@@ -114,7 +114,7 @@ fn (mut s SessionManager) receive_packet() {
                 return
             }
 
-            mut reply := open_connection_reply2 {
+            mut reply := OpenConnectionReply2 {
                 p: new_packet([byte(0)].repeat(35).data, u32(35))
                 server_id: 123456789
                 client_address: request.p.address

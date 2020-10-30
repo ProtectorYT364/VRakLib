@@ -1,7 +1,6 @@
 module vraklib
 
 import net
-//import os
 
 const (
     default_buffer_size = 8388608 // 1024 * 1024 * 8

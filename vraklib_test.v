@@ -1,4 +1,5 @@
-import vraklib
+//import vraklib
+module vraklib
 
 fn test_bytebuffer() {
     buffer := [1024]byte
