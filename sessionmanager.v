@@ -2,7 +2,7 @@ module vraklib
 
 struct SessionManager {
 mut:
-    socket UdpSocket
+    socket Socket
     sessions []Session
     session_by_address map[string]Session
 
@@ -11,7 +11,7 @@ mut:
     start_time_ms int
 }
 
-fn new_session_manager(socket UdpSocket) &SessionManager {
+fn new_session_manager(socket Socket) &SessionManager {
     sm := &SessionManager {
         socket: socket
         start_time_ms: 0 // TODO
