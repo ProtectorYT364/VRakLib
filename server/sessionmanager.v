@@ -20,15 +20,6 @@ mut:
     next_session_id int
 }
 
-pub fn new_session_manager(server VRakLib, socket UdpSocket) &SessionManager {
-    sm := &SessionManager {
-        server: server
-        socket: socket
-        start_time_ms: 0 // TODO
-    }
-    return sm
-}
-
 fn (s SessionManager) get_raknet_time_ms() i64 {
     return 0 - s.start_time_ms // TODO
 }
@@ -165,7 +156,5 @@ fn (mut s SessionManager) open_session(session Session) {
 }
 
 fn (mut s SessionManager) handle_encapsulated(session Session, packet protocol.EncapsulatedPacket) {
-    mut server_raklib := s.server
-    server_raklib.handle_encapsulated(session.internal_id.str(), packet, priority_normal)
-    //s.server.handle_encapsulated(session.internal_id.str(), packet, priority_normal)
+    s.server.handle_encapsulated(session.internal_id.str(), packet, priority_normal)
 }

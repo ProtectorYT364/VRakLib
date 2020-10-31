@@ -18,7 +18,7 @@ pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulat
     r.shutdown = false
 
     socket := server.create_socket(r.address.ip, int(r.address.port)) or { panic(err) }
-    session_manager := server.new_session_manager(r, socket)
+    session_manager := r.new_session_manager(socket)
     r.session_manager = session_manager
 
     r.channel_sessions = ch1
@@ -54,6 +54,15 @@ fn (r VRakLib) put_packet(identifier string, packet protocol.Packet, need_ack bo
 
 fn (r VRakLib) update_ping() {
     
+}
+
+fn (r VRakLib) new_session_manager(socket server.UdpSocket) &server.SessionManager {
+    sm := &server.SessionManager {
+        server: r
+        socket: socket
+        start_time_ms: 0 // TODO
+    }
+    return sm
 }
 
 
