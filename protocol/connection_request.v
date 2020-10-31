@@ -1,7 +1,5 @@
 module protocol
 
-import vraklib.utils
-
 struct ConnectionRequest {
 mut:
     p Packet

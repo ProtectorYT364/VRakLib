@@ -6,8 +6,8 @@ struct NewIncomingConnection {
 mut:
     p Packet
 
-    address InternetAddress
-    system_addresses []InternetAddress
+    address utils.InternetAddress
+    system_addresses []utils.InternetAddress
     ping_time i64
     pong_time i64
 }

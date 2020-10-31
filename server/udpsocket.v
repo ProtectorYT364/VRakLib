@@ -20,7 +20,7 @@ pub fn create_socket(ip string, port int) ?Socket {
     return s
 }
 
-fn (s Socket) receive() ?Packet {
+fn (s Socket) receive() ?protocol.Packet {
     bufsize := default_buffer_size
 	bytes := [default_buffer_size]byte{}
 
@@ -36,13 +36,13 @@ fn (s Socket) receive() ?Packet {
     port := s.get_port()
 	print('IP is $ip, Port is $port')
 
-    return Packet {
+    return protocol.Packet {
         buffer: new_bytebuffer(bytes, u32(res))
-        address: InternetAddress { ip: tos(ip, 16), port: u16(addr.sin_port), version: byte(4) }
+        address: utils.InternetAddress { ip: tos(ip, 16), port: u16(addr.sin_port), version: byte(4) }
     }
 }
 
-fn (s Socket) send(packet DataPacketHandler, p Packet) ?int {
+fn (s Socket) send(packet protocol.DataPacketHandler, p protocol.Packet) ?int {
     mut addr := C.sockaddr_in{}
     addr.sin_port = int(p.address.port)
     C.inet_pton(C.AF_INET, p.address.ip.str, &addr.sin_addr)//TODO look up what this is

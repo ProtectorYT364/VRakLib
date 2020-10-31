@@ -21,7 +21,7 @@ struct Packet {
 mut:
     buffer ByteBuffer
 
-    address InternetAddress
+    address utils.InternetAddress
 }
 
 fn new_packet_from_packet(packet Packet) Packet {
@@ -47,7 +47,7 @@ fn get_packet_magic() []byte {
     return [ byte(0x00), 0xff, 0xff, 0x00, 0xfe, 0xfe, 0xfe, 0xfe, 0xfd, 0xfd, 0xfd, 0xfd, 0x12, 0x34, 0x56, 0x78 ]
 }
 
-fn (mut p Packet) put_address(address InternetAddress) {
+fn (mut p Packet) put_address(address utils.InternetAddress) {
     p.buffer.put_byte(address.version)
     if address.version == 4 {
         numbers := address.ip.split('.')

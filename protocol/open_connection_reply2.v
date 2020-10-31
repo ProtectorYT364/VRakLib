@@ -7,7 +7,7 @@ mut:
     p Packet
 
     server_id i64
-    client_address InternetAddress
+    client_address utils.InternetAddress
     mtu_size u16
     security bool
 }
