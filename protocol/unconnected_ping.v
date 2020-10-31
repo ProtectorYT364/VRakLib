@@ -1,4 +1,7 @@
-module vraklib
+module protocol
+
+import vraklib.server
+import vraklib.utils
 
 struct UnConnectedPing {
 mut:

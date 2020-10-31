@@ -1,22 +1,16 @@
 module vraklib
 
-//import bstone
+import vraklib.utils
+import vraklib.server
 
 struct VRakLib {
 mut:
-    server &bstone.Server
-
-    address InternetAddress
-
-    session_manager &SessionManager
-
+    address utils.InternetAddress
+    session_manager &server.SessionManager
     shutdown bool
-
-    players map[string]bstone.Player
-    identifiers map[string]string
 }
 
-pub fn (mut r VRakLib) start() {
+pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulatedData, ch3 chan PutPacketData) {
     r.shutdown = false
 
     socket := create_socket(r.address.ip, int(r.address.port)) or { panic(err) }
@@ -34,28 +28,42 @@ fn (r VRakLib) close_session() {
 
 }
 
-fn (mut r VRakLib) open_session(identifier string, address InternetAddress, client_id u64) {
-    player := bstone.new_player(r, r.server, address.ip, address.port)
-    r.players[identifier] = player
-    r.identifiers[player.hash_code().str()] = identifier
-    r.server.add_player(player)
+fn (mut r VRakLib) open_session(identifier string, address utils.InternetAddress, client_id u64) {
 }
 
-fn (r VRakLib) handle_encapsulated(identifier string, packet EncapsulatedPacket, flags int) {
-    if identifier in r.players {
-        player := r.players[identifier]
-        address := player.ip
-        println(address)
+fn (r VRakLib) handle_encapsulated(identifier string, packet server.EncapsulatedPacket, flags int) {
+
 
         //p := BatchPacket {}
         //player.handle_data_packet(p)
-    }
 }
 
-fn (r VRakLib) put_packet(player bstone.Player, packet Packet, need_ack bool, immediate bool) {
+fn (r VRakLib) put_packet(identifier string, packet server.Packet, need_ack bool, immediate bool) {
 
 }
 
 fn (r VRakLib) update_ping() {
     
+}
+
+
+struct OpenSessionData {
+mut:
+	identifier string
+    address utils.InternetAddress
+    client_id u64
+}
+
+struct HandleEncapsulatedData {
+mut:
+	identifier string
+    packet server.EncapsulatedPacket
+    flags int
+}
+
+struct PutPacketData {
+mut:
+	identifier string
+    packet server.EncapsulatedPacket
+    flags int
 }

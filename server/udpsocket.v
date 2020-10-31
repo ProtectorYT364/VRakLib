@@ -1,6 +1,8 @@
-module vraklib
+module server
 
 import net
+import vraklib.protocol
+import vraklib.utils
 
 const (
     default_buffer_size = 8388608 // 1024 * 1024 * 8
@@ -13,7 +15,7 @@ pub fn create_socket(ip string, port int) ?Socket {
     s.setsockopt(C.SOL_SOCKET, C.SO_RCVBUF, &bufsize)
     zero := 0
     s.setsockopt(C.SOL_SOCKET, C.SO_REUSEADDR, &zero)
-	s.bind( 19132 ) or { panic(err) }
+	s.bind( port ) or { panic(err) }
 
     return s
 }

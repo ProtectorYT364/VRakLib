@@ -1,4 +1,7 @@
-module vraklib
+module server
+
+import vraklib.protocol
+import vraklib.utils
 
 struct SessionManager {
 mut:
@@ -31,10 +34,8 @@ fn (s SessionManager) get_raknet_time_ms() i64 {
 }
 
 fn (mut s SessionManager) run() {
-    for {
-        if !s.shutdown {
-            s.receive_packet()
-        }
+    for !s.shutdown {
+        s.receive_packet()
 
         for i, session in s.sessions {
             s.sessions[i].update()

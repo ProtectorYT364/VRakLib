@@ -1,4 +1,7 @@
-module vraklib
+module server
+
+import vraklib.protocol
+import vraklib.utils
 
 const (
     max_split_size = 128
@@ -100,7 +103,7 @@ fn new_session(session_manager SessionManager, address InternetAddress, client_i
         mtu_size: mtu_size
         id: client_id
 
-        send_queue_data: Datagram { sequence_number: -1 }
+        send_queue_data: Datagram {}
 
         internal_id: internal_id
     }

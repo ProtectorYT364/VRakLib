@@ -1,6 +1,7 @@
-module vraklib
+module protocol
 
 import math
+import vraklib.utils
 
 const (
     raknet_magic_length = 16
@@ -79,7 +80,7 @@ mut:
     p Packet
 
     packet_id byte
-    sequence_number int
+    sequence_number int = -1
     packets []EncapsulatedPacket
 }
 
