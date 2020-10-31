@@ -12,6 +12,7 @@ mut:
 fn (mut r ConnectionRequest) encode() {}
 
 fn (mut r ConnectionRequest) decode() {
+    println('debug')
     r.p.buffer.get_byte()
     r.client_id = r.p.buffer.get_long()
     r.ping_time = r.p.buffer.get_long()

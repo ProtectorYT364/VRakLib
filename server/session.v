@@ -70,7 +70,7 @@ mut:
 
     need_ack map[string]TmpMapInt
 
-    send_queue_data Datagram
+    send_queue_data protocol.Datagram
 
     window_start u32
     window_end u32
@@ -87,7 +87,7 @@ mut:
     internal_id int
 }
 
-fn new_session(session_manager SessionManager, address InternetAddress, client_id u64, mtu_size u16, internal_id int) Session {
+fn new_session(session_manager SessionManager, address utils.InternetAddress, client_id u64, mtu_size u16, internal_id int) Session {
     println('$address.ip, $address.port, $client_id, $mtu_size, $internal_id')
     session := Session {
         send_ordered_index: [0].repeat(channel_count)
@@ -96,14 +96,14 @@ fn new_session(session_manager SessionManager, address InternetAddress, client_i
         receive_ordered_index: [0].repeat(channel_count)
         receive_sequenced_highest_index: [0].repeat(channel_count)
 
-        receive_ordered_packets: [[]EncapsulatedPacket{}].repeat(channel_count)
+        receive_ordered_packets: [[]protocol.EncapsulatedPacket{}].repeat(channel_count)
 
         session_manager: session_manager
         address: address
         mtu_size: mtu_size
         id: client_id
 
-        send_queue_data: Datagram {}
+        send_queue_data: protocol.Datagram {}
 
         internal_id: internal_id
     }
@@ -141,7 +141,7 @@ fn (mut s Session) update() {
     s.send_queue()
 }
 
-fn (mut s Session) send_datagram(datagram Datagram) {
+fn (mut s Session) send_datagram(datagram protocol.Datagram) {
     mut d := datagram
 
     if datagram.sequence_number != -1 {
@@ -153,7 +153,7 @@ fn (mut s Session) send_datagram(datagram Datagram) {
     s.send_packet(d, d.p)
 }
 
-fn (s Session) send_packet(packet DataPacketHandler, p Packet) {
+fn (s Session) send_packet(packet protocol.DataPacketHandler, p protocol.Packet) {
     mut pp := p
     pp.address = s.address
     s.session_manager.send_packet(packet, pp)
@@ -168,12 +168,12 @@ fn (s Session) send_ping(reliability int) {
 fn (mut s Session) send_queue() {
     if s.send_queue_data.packets.len > 0 {
         s.send_datagram(s.send_queue_data)
-        s.send_queue_data = Datagram { sequence_number: -1 }
+        s.send_queue_data = protocol.Datagram { sequence_number: -1 }
     }
 }
 
-fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order_channel int, flag byte) {
-    mut encapsulated := EncapsulatedPacket {
+fn (mut s Session) queue_connected_packet(packet protocol.Packet, reliability byte, order_channel int, flag byte) {
+    mut encapsulated := protocol.EncapsulatedPacket {
         buffer: packet.buffer.buffer
         length: u16(packet.buffer.length)
         reliability: reliability
@@ -182,7 +182,7 @@ fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order
     s.add_encapsulated_to_queue(encapsulated, flag)
 }
 
-fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
+fn (mut s Session) add_to_queue(packet protocol.EncapsulatedPacket, flags byte) {
     mut p := packet
     priority := flags & 0x07
     if p.need_ack && p.message_index != -1 {
@@ -207,7 +207,7 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
     }
 }
 
-fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags byte) {
+fn (mut s Session) add_encapsulated_to_queue(packet protocol.EncapsulatedPacket, flags byte) {
     mut p := packet
     p.need_ack = (flags & 0x09) != 0
     println(p.need_ack)
@@ -216,10 +216,10 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
         s.need_ack[p.identifier_ack.str()] = TmpMapInt {}
     }
 
-    if reliability_is_ordered(p.reliability) {
+    if protocol.reliability_is_ordered(p.reliability) {
         p.order_index = s.send_ordered_index[p.order_channel]
         s.send_ordered_index[p.order_channel] += 1
-    } else if reliability_is_sequenced(p.reliability) {
+    } else if protocol.reliability_is_sequenced(p.reliability) {
         p.order_index = s.send_ordered_index[p.order_channel]
         p.sequence_index = s.send_sequenced_index[p.order_channel]
         s.send_sequenced_index[p.order_channel] += 1
@@ -244,7 +244,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 
         split_id := s.split_id % 65536
         for count, buffer in buffers {
-            mut encapsulated_packet := EncapsulatedPacket {}
+            mut encapsulated_packet := protocol.EncapsulatedPacket {}
             encapsulated_packet.split_id = u16(split_id)
             encapsulated_packet.has_split = true
             encapsulated_packet.split_count = buffer_count
@@ -252,7 +252,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
             encapsulated_packet.split_index = count
             encapsulated_packet.buffer = buffer
 
-            if reliability_is_reliable(p.reliability) {
+            if protocol.reliability_is_reliable(p.reliability) {
                 encapsulated_packet.message_index = s.message_index
                 s.message_index++
             }
@@ -263,7 +263,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
             s.add_to_queue(encapsulated_packet, flags | priority_immediate)
         }
     } else {
-        if reliability_is_reliable(p.reliability) {
+        if protocol.reliability_is_reliable(p.reliability) {
             p.message_index = s.message_index
             s.message_index++
         }
@@ -271,7 +271,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
     }
 }
 
-fn (mut s Session) handle_packet(packet Datagram) {
+fn (mut s Session) handle_packet(packet protocol.Datagram) {
     mut p := packet
     p.decode()
 
@@ -318,7 +318,7 @@ fn (mut s Session) handle_packet(packet Datagram) {
     }
 }
 
-fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
+fn (mut s Session) handle_split(packet protocol.EncapsulatedPacket) ?protocol.EncapsulatedPacket {
     if packet.split_count >= max_split_size ||
         packet.split_index >= max_split_size ||
         packet.split_index < 0 {
@@ -338,7 +338,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
     }
 
     if s.split_packets[packet.split_id.str()].m.size == packet.split_count {
-        mut p := EncapsulatedPacket {}
+        mut p := protocol.EncapsulatedPacket {}
         
         mut buffer := []byte{}
 
@@ -363,7 +363,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
     return error('')
 }
 
-fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
+fn (mut s Session) handle_encapsulated_packet(packet protocol.EncapsulatedPacket) {
     mut p := packet
     if p.message_index != -1 {
         if p.message_index < s.reliable_window_start ||
@@ -391,13 +391,13 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
         p = pp
     }
 
-    if reliability_is_sequenced_or_ordered(packet.reliability) &&
+    if protocol.reliability_is_sequenced_or_ordered(packet.reliability) &&
         (packet.order_channel < 0 || packet.order_channel >= channel_count) {
             // Invalid packet
             return
     }
 
-    if reliability_is_sequenced(packet.reliability) {
+    if protocol.reliability_is_sequenced(packet.reliability) {
         if packet.sequence_index < s.receive_sequenced_highest_index[packet.order_channel] ||
             packet.order_index < s.receive_ordered_index[packet.order_channel] {
                 // too old sequenced packet
@@ -406,7 +406,7 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 
         s.receive_sequenced_highest_index[packet.order_channel] = packet.sequence_index + 1
         s.handle_encapsulated_packet_route(packet)
-    } else if reliability_is_ordered(packet.reliability) {
+    } else if protocol.reliability_is_ordered(packet.reliability) {
         if packet.order_index == s.receive_ordered_index[packet.order_channel] {
             s.receive_sequenced_highest_index[packet.order_index] = 0
             s.receive_ordered_index[packet.order_channel] = packet.order_index + 1
@@ -414,7 +414,7 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
             s.handle_encapsulated_packet_route(packet)
             mut i := s.receive_ordered_index[packet.order_channel]
             for {
-                d := s.receive_ordered_packets[packet.order_channel]
+                //d := s.receive_ordered_packets[packet.order_channel]
                 //if !d[i] {
                 //    break
                 //}
@@ -436,17 +436,17 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
     }
 }
 
-fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
-    pid := packet.buffer[0]
+fn (mut s Session) handle_encapsulated_packet_route(packet protocol.EncapsulatedPacket) {
+    pid := unsafe { packet.buffer[0] }
 
     if pid < id_user_packet_enum {
         if s.state == .connecting {
             if pid == id_connection_request {
-                mut connection := ConnectionRequest { p: new_packet(packet.buffer, u32(packet.length)) }
+                mut connection := protocol.ConnectionRequest { p: protocol.new_packet(packet.buffer, u32(packet.length)) }
                 connection.decode()
 
-                mut accepted := ConnectionRequestAccepted {
-                    p: new_packet([byte(0)].repeat(96).data, u32(96))
+                mut accepted := protocol.ConnectionRequestAccepted {
+                    p: protocol.new_packet([byte(0)].repeat(96).data, u32(96))
                     ping_time: connection.ping_time
                     pong_time: s.session_manager.get_raknet_time_ms() // TODO
                 }
@@ -455,7 +455,7 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 
                 s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
             } else if pid == id_new_incoming_connection {
-                mut connection := NewIncomingConnection { p: new_packet(packet.buffer, u32(packet.length)) }
+                mut connection := protocol.NewIncomingConnection { p: protocol.new_packet(packet.buffer, u32(packet.length)) }
                 connection.decode()
 
                 if connection.address.port == u16(19132) || !s.session_manager.port_checking {

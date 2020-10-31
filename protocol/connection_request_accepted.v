@@ -11,7 +11,7 @@ mut:
 }
 
 fn (mut r ConnectionRequestAccepted) encode() {
-    r.p.buffer.put_byte(IdConnectionRequestAccepted)
+    r.p.buffer.put_byte(id_connection_request_accepted)
     r.p.put_address(r.p.address)
     r.p.buffer.put_short(i16(0))
 

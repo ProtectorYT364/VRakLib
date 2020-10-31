@@ -17,27 +17,27 @@ const (
     bitflag_needs_b_and_as = 0x04
 )
 
-struct Packet {
-mut:
-    buffer ByteBuffer
+pub struct Packet {
+pub mut:
+    buffer utils.ByteBuffer
 
     address utils.InternetAddress
 }
 
 fn new_packet_from_packet(packet Packet) Packet {
     return Packet {
-        buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
+        buffer: utils.new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
         address: packet.address
     }
 }
 
 fn new_packet(buffer byteptr, length u32) Packet {
     return Packet {
-        buffer: new_bytebuffer(buffer, length)
+        buffer: utils.new_bytebuffer(buffer, length)
     }
 }
 
-fn new_packet_from_bytebuffer(buffer ByteBuffer) Packet {
+fn new_packet_from_bytebuffer(buffer utils.ByteBuffer) Packet {
     return Packet {
         buffer: buffer
     }
@@ -59,7 +59,7 @@ fn (mut p Packet) put_address(address utils.InternetAddress) {
 }
 
 struct EncapsulatedPacket {
-mut:
+pub mut:
     buffer byteptr
     length u16
     reliability byte
@@ -76,7 +76,7 @@ mut:
 }
 
 struct Datagram {
-mut:
+pub mut:
     p Packet
 
     packet_id byte
@@ -130,7 +130,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
 }
 
 fn (p EncapsulatedPacket) to_binary() Packet {
-    mut packet := Packet{ buffer: new_bytebuffer([byte(0)].repeat(int(p.get_length())).data, p.get_length()) }
+    mut packet := Packet{ buffer: utils.new_bytebuffer([byte(0)].repeat(int(p.get_length())).data, p.get_length()) }
     packet.buffer.put_byte(byte(p.reliability << 5 | (if p.has_split { 0x01 } else { 0x00 })))
     packet.buffer.put_ushort(u16(p.length << u16(3)))
 
