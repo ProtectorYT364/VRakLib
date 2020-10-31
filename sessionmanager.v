@@ -17,6 +17,15 @@ mut:
     next_session_id int
 }
 
+fn new_session_manager(r VRakLib, socket UdpSocket) &SessionManager {
+    sm := &SessionManager {
+        server: r
+        socket: socket
+        start_time_ms: 0 // TODO
+    }
+    return sm
+}
+
 fn (s SessionManager) get_raknet_time_ms() i64 {
     return 0 - s.start_time_ms // TODO
 }
