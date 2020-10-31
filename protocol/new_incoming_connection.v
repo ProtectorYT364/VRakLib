@@ -1,13 +1,13 @@
-module protocol
+module vraklib
 
-import vraklib.utils
+import utils
 
 struct NewIncomingConnection {
 mut:
     p Packet
 
-    address utils.InternetAddress
-    system_addresses []utils.InternetAddress
+    address InternetAddress
+    system_addresses []InternetAddress
     ping_time i64
     pong_time i64
 }

@@ -1,13 +1,13 @@
-module protocol
+module vraklib
 
-import vraklib.utils
+import utils
 
 struct OpenConnectionReply2 {
 mut:
     p Packet
 
     server_id i64
-    client_address utils.InternetAddress
+    client_address InternetAddress
     mtu_size u16
     security bool
 }

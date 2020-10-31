@@ -1,8 +1,8 @@
-module server
+module vraklib
 
 import net
-import vraklib.protocol
-import vraklib.utils
+import protocol
+import utils
 
 const (
     default_buffer_size = 8388608 // 1024 * 1024 * 8
@@ -25,7 +25,7 @@ pub fn create_socket(ip string, port int) ?UdpSocket {
     return UdpSocket{ s }
 }
 
-fn (s UdpSocket) receive() ?protocol.Packet {
+fn (s UdpSocket) receive() ?Packet {
     bufsize := default_buffer_size
 	bytes := [default_buffer_size]byte{}
 
@@ -39,13 +39,13 @@ fn (s UdpSocket) receive() ?protocol.Packet {
     port := s.s.get_port()
 	print('IP is $ip, Port is $port')
 
-    return protocol.Packet {
-        buffer: utils.new_bytebuffer(bytes, u32(res))
-        address: utils.InternetAddress { ip: ip, port: u16(port), version: byte(4) }
+    return Packet {
+        buffer: new_bytebuffer(bytes, u32(res))
+        address: InternetAddress { ip: ip, port: u16(port), version: byte(4) }
     }
 }
 
-fn (s UdpSocket) send(packet protocol.DataPacketHandler, p protocol.Packet) ?int {
+fn (s UdpSocket) send(packet DataPacketHandler, p Packet) ?int {
     //TODO - seems to be incomplete in vlang
     //mut addr := C.sockaddr_in{}
     //addr.sin_port = int(p.address.port)

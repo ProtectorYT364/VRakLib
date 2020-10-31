@@ -1,6 +1,4 @@
-module protocol
-
-import vraklib.utils
+module vraklib
 
 struct ConnectionRequestAccepted {
 mut:
@@ -15,10 +13,10 @@ fn (mut r ConnectionRequestAccepted) encode() {
     r.p.put_address(r.p.address)
     r.p.buffer.put_short(i16(0))
 
-    r.p.put_address(utils.InternetAddress { ip: '127.0.0.1', port: u16(0), version: 4 })
+    r.p.put_address(InternetAddress { ip: '127.0.0.1', port: u16(0), version: 4 })
     mut i := 0
     for i < 9 {
-        r.p.put_address(utils.InternetAddress { ip: '0.0.0.0', port: u16(0), version: 4 })
+        r.p.put_address(InternetAddress { ip: '0.0.0.0', port: u16(0), version: 4 })
         i++
     }
     r.p.buffer.put_long(r.ping_time)

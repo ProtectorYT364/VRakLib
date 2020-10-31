@@ -1,4 +1,4 @@
-module protocol
+module vraklib
 
 struct OpenConnectionRequest2 {
 mut:

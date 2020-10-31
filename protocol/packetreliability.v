@@ -1,4 +1,4 @@
-module protocol
+module vraklib
 
 const (
     reliability_unreliable = 0x00

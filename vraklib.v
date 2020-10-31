@@ -1,23 +1,19 @@
 module vraklib
 
-import vraklib.utils
-import vraklib.server
-import vraklib.protocol
-
 pub struct VRakLib {
 pub mut:
     channel_sessions chan OpenSessionData
     channel_encapsulated chan HandleEncapsulatedData
     channel_packetdata chan PutPacketData
-    address utils.InternetAddress
-    session_manager &server.SessionManager
+    address InternetAddress
+    session_manager &SessionManager
     shutdown bool
 }
 
 pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulatedData, ch3 chan PutPacketData) {
     r.shutdown = false
 
-    socket := server.create_socket(r.address.ip, int(r.address.port)) or { panic(err) }
+    socket := create_socket(r.address.ip, int(r.address.port)) or { panic(err) }
     session_manager := r.new_session_manager(socket)
     r.session_manager = session_manager
 
@@ -36,19 +32,19 @@ fn (r VRakLib) close_session() {
 
 }
 
-fn (mut r VRakLib) open_session(identifier string, address utils.InternetAddress, client_id u64) {
+fn (mut r VRakLib) open_session(identifier string, address InternetAddress, client_id u64) {
     data := OpenSessionData { identifier, address, client_id }
     r.channel_sessions <- data
 }
 
-fn (r VRakLib) handle_encapsulated(identifier string, packet protocol.EncapsulatedPacket, flags int) {
+fn (r VRakLib) handle_encapsulated(identifier string, packet EncapsulatedPacket, flags int) {
 
 
         //p := BatchPacket {}
         //player.handle_data_packet(p)
 }
 
-fn (r VRakLib) put_packet(identifier string, packet protocol.Packet, need_ack bool, immediate bool) {
+fn (r VRakLib) put_packet(identifier string, packet Packet, need_ack bool, immediate bool) {
 
 }
 
@@ -56,8 +52,8 @@ fn (r VRakLib) update_ping() {
     
 }
 
-fn (r VRakLib) new_session_manager(socket server.UdpSocket) &server.SessionManager {
-    sm := &server.SessionManager {
+fn (r VRakLib) new_session_manager(socket UdpSocket) &SessionManager {
+    sm := &SessionManager {
         server: r
         socket: socket
         start_time_ms: 0 // TODO
@@ -69,20 +65,20 @@ fn (r VRakLib) new_session_manager(socket server.UdpSocket) &server.SessionManag
 struct OpenSessionData {
 mut:
 	identifier string
-    address utils.InternetAddress
+    address InternetAddress
     client_id u64
 }
 
 struct HandleEncapsulatedData {
 mut:
 	identifier string
-    packet protocol.EncapsulatedPacket
+    packet EncapsulatedPacket
     flags int
 }
 
 struct PutPacketData {
 mut:
 	identifier string
-    packet protocol.EncapsulatedPacket
+    packet EncapsulatedPacket
     flags int
 }

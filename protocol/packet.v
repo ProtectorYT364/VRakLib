@@ -1,7 +1,7 @@
-module protocol
+module vraklib
 
 import math
-import vraklib.utils
+import utils
 
 const (
     raknet_magic_length = 16
@@ -19,25 +19,25 @@ const (
 
 pub struct Packet {
 pub mut:
-    buffer utils.ByteBuffer
+    buffer ByteBuffer
 
-    address utils.InternetAddress
+    address InternetAddress
 }
 
 fn new_packet_from_packet(packet Packet) Packet {
     return Packet {
-        buffer: utils.new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
+        buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
         address: packet.address
     }
 }
 
 fn new_packet(buffer byteptr, length u32) Packet {
     return Packet {
-        buffer: utils.new_bytebuffer(buffer, length)
+        buffer: new_bytebuffer(buffer, length)
     }
 }
 
-fn new_packet_from_bytebuffer(buffer utils.ByteBuffer) Packet {
+fn new_packet_from_bytebuffer(buffer ByteBuffer) Packet {
     return Packet {
         buffer: buffer
     }
@@ -47,7 +47,7 @@ fn get_packet_magic() []byte {
     return [ byte(0x00), 0xff, 0xff, 0x00, 0xfe, 0xfe, 0xfe, 0xfe, 0xfd, 0xfd, 0xfd, 0xfd, 0x12, 0x34, 0x56, 0x78 ]
 }
 
-fn (mut p Packet) put_address(address utils.InternetAddress) {
+fn (mut p Packet) put_address(address InternetAddress) {
     p.buffer.put_byte(address.version)
     if address.version == 4 {
         numbers := address.ip.split('.')
@@ -130,7 +130,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
 }
 
 fn (p EncapsulatedPacket) to_binary() Packet {
-    mut packet := Packet{ buffer: utils.new_bytebuffer([byte(0)].repeat(int(p.get_length())).data, p.get_length()) }
+    mut packet := Packet{ buffer: new_bytebuffer([byte(0)].repeat(int(p.get_length())).data, p.get_length()) }
     packet.buffer.put_byte(byte(p.reliability << 5 | (if p.has_split { 0x01 } else { 0x00 })))
     packet.buffer.put_ushort(u16(p.length << u16(3)))
 

@@ -1,4 +1,4 @@
-module protocol
+module vraklib
 
 const (
     id_connected_ping = 0x00

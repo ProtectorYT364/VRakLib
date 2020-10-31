@@ -1,7 +1,7 @@
-module server
+module vraklib
 
-import vraklib.protocol
-import vraklib.utils
+import protocol
+import utils
 
 struct SessionManager {
 mut:
@@ -50,19 +50,19 @@ fn (mut s SessionManager) receive_packet() {
                 // NACK
                 println('nack')
             } else {
-                datagram := protocol.Datagram { p: protocol.new_packet_from_packet(packet) }
+                datagram := Datagram { p: new_packet_from_packet(packet) }
                 session.handle_packet(datagram)
             }
         }
     } else {
         if pid == id_un_connected_ping {
-            mut ping := protocol.UnConnectedPing { p: protocol.new_packet_from_packet(packet) }
+            mut ping := UnConnectedPing { p: new_packet_from_packet(packet) }
             ping.decode()
 
             title := 'MCPE;Minecraft V Server!;361;1.12.0;0;100;123456789;Test;Survival;'
             len := 35 + title.len
-            mut pong := protocol.UnConnectedPong {
-                p: protocol.new_packet([byte(0)].repeat(len).data, u32(len))
+            mut pong := UnConnectedPong {
+                p: new_packet([byte(0)].repeat(len).data, u32(len))
                 server_id: 123456789
                 ping_id: ping.ping_id
                 str: title
@@ -72,12 +72,12 @@ fn (mut s SessionManager) receive_packet() {
 
             s.socket.send(pong, pong.p)
         } else if pid == id_open_connection_request1 {
-            mut request := protocol.OpenConnectionRequest1 { p: protocol.new_packet_from_packet(packet) }
+            mut request := OpenConnectionRequest1 { p: new_packet_from_packet(packet) }
             request.decode()
             
             if request.version != 9 {
-                mut incompatible := protocol.IncompatibleProtocolVersion {
-                    p: protocol.new_packet([byte(0)].repeat(26).data, u32(26))
+                mut incompatible := IncompatibleProtocolVersion {
+                    p: new_packet([byte(0)].repeat(26).data, u32(26))
                     version: 9
                     server_id: 123456789
                 }
@@ -88,8 +88,8 @@ fn (mut s SessionManager) receive_packet() {
                 return
             }
 
-            mut reply := protocol.OpenConnectionReply1 {
-                p: protocol.new_packet([byte(0)].repeat(28).data, u32(28))
+            mut reply := OpenConnectionReply1 {
+                p: new_packet([byte(0)].repeat(28).data, u32(28))
                 security: false
                 server_id: 123456789
                 mtu_size: request.mtu_size + u16(28)
@@ -99,7 +99,7 @@ fn (mut s SessionManager) receive_packet() {
 
             s.socket.send(reply, reply.p)
         } else if pid == id_open_connection_request2 {
-            mut request := protocol.OpenConnectionRequest2 { p: protocol.new_packet_from_packet(packet) }
+            mut request := OpenConnectionRequest2 { p: new_packet_from_packet(packet) }
             request.decode()
 
             if request.mtu_size < u16(min_mtu_size) {
@@ -107,8 +107,8 @@ fn (mut s SessionManager) receive_packet() {
                 return
             }
 
-            mut reply := protocol.OpenConnectionReply2 {
-                p: protocol.new_packet([byte(0)].repeat(35).data, u32(35))
+            mut reply := OpenConnectionReply2 {
+                p: new_packet([byte(0)].repeat(35).data, u32(35))
                 server_id: 123456789
                 client_address: request.p.address
                 mtu_size: request.mtu_size
@@ -123,15 +123,15 @@ fn (mut s SessionManager) receive_packet() {
     }
 }
 
-fn (s SessionManager) get_session_by_address(address utils.InternetAddress) Session {
+fn (s SessionManager) get_session_by_address(address InternetAddress) Session {
     return s.session_by_address['$address.ip:${address.port.str()}']
 }
 
-fn (s SessionManager) session_exists(address utils.InternetAddress) bool {
+fn (s SessionManager) session_exists(address InternetAddress) bool {
     return '$address.ip:${address.port.str()}' in s.session_by_address
 }
 
-fn (mut s SessionManager) create_session(address utils.InternetAddress, client_id u64, mtu_size u16) &Session {
+fn (mut s SessionManager) create_session(address InternetAddress, client_id u64, mtu_size u16) &Session {
     for {
         if s.next_session_id.str() in s.sessions {
             s.next_session_id++
@@ -147,7 +147,7 @@ fn (mut s SessionManager) create_session(address utils.InternetAddress, client_i
     return &session
 }
 
-fn (s SessionManager) send_packet(packet protocol.DataPacketHandler, p protocol.Packet) {
+fn (s SessionManager) send_packet(packet DataPacketHandler, p Packet) {
     s.socket.send(packet, p)
 }
 
@@ -155,6 +155,6 @@ fn (mut s SessionManager) open_session(session Session) {
     s.server.open_session(session.internal_id.str(), session.address, session.id)
 }
 
-fn (mut s SessionManager) handle_encapsulated(session Session, packet protocol.EncapsulatedPacket) {
+fn (mut s SessionManager) handle_encapsulated(session Session, packet EncapsulatedPacket) {
     s.server.handle_encapsulated(session.internal_id.str(), packet, priority_normal)
 }
