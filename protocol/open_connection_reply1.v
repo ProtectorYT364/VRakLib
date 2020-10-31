@@ -1,8 +1,5 @@
 module protocol
 
-import vraklib.server
-import vraklib.utils
-
 struct OpenConnectionReply1 {
 mut:
     p Packet

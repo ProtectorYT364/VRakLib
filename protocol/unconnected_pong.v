@@ -1,8 +1,5 @@
 module protocol
 
-import vraklib.server
-import vraklib.utils
-
 struct UnConnectedPong {
 mut:
     p Packet

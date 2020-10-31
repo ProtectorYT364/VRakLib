@@ -1,6 +1,5 @@
 module protocol
 
-import vraklib.server
 import vraklib.utils
 
 struct ConnectionRequest {

@@ -21,7 +21,7 @@ enum State {
 
 struct TmpMapEncapsulatedPacket {
 mut:
-    m map[string]EncapsulatedPacket
+    m map[string]protocol.EncapsulatedPacket
 }
 
 struct TmpMapInt {
@@ -37,13 +37,13 @@ mut:
     send_sequenced_index []int
     receive_ordered_index []int
     receive_sequenced_highest_index []int
-    receive_ordered_packets [][]EncapsulatedPacket
+    receive_ordered_packets [][]protocol.EncapsulatedPacket
 
     session_manager SessionManager
 
     // logger logger
 
-    address InternetAddress
+    address utils.InternetAddress
 
     state State // connecting
 
@@ -64,7 +64,7 @@ mut:
     ack_queue map[string]u32
     nack_queue map[string]u32
 
-    recovery_queue map[string]Datagram
+    recovery_queue map[string]protocol.Datagram
 
     split_packets map[string]TmpMapEncapsulatedPacket
 
