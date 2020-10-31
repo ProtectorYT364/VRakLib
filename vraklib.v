@@ -6,6 +6,7 @@ pub mut:
     channel_encapsulated chan HandleEncapsulatedData
     channel_packetdata chan PutPacketData
     address InternetAddress
+    //session_manager &SessionManager
     session_manager &SessionManager
     shutdown bool
 }
@@ -14,14 +15,14 @@ pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulat
     r.shutdown = false
 
     socket := create_socket(r.address.ip, int(r.address.port)) or { panic(err) }
-    session_manager := r.new_session_manager(socket)
+    mut session_manager := &r.new_session_manager(socket)
     r.session_manager = session_manager
 
     r.channel_sessions = ch1
     r.channel_encapsulated = ch2
     r.channel_packetdata = ch3
 
-    go r.session_manager.run()
+    go session_manager.run()
 }
 
 pub fn (mut r VRakLib) stop() {

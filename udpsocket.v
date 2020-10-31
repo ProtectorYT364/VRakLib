@@ -1,8 +1,6 @@
 module vraklib
 
 import net
-import protocol
-import utils
 
 const (
     default_buffer_size = 8388608 // 1024 * 1024 * 8
@@ -35,7 +33,7 @@ fn (s UdpSocket) receive() ?Packet {
     }
 	print('Received $res bytes: ' + tos(bytes, res))
 
-    ip := s.s.peer_ip() or { return }
+    ip := s.s.peer_ip() or { return error('ip cant be get') }
     port := s.s.get_port()
 	print('IP is $ip, Port is $port')
 

@@ -1,7 +1,5 @@
 module vraklib
 
-import utils
-
 struct NewIncomingConnection {
 mut:
     p Packet

@@ -1,8 +1,5 @@
 module vraklib
 
-import protocol
-import utils
-
 struct SessionManager {
 mut:
     server VRakLib
@@ -36,7 +33,6 @@ pub fn (mut s SessionManager) run() {
 
 fn (mut s SessionManager) receive_packet() {
     packet := s.socket.receive() or { return }
-    if packet.buffer.buffer.len < 1 { return }
     pid := unsafe { packet.buffer.buffer[0] }
 
     if s.session_exists(packet.address) {

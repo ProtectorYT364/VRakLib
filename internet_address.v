@@ -1,4 +1,4 @@
-module utils
+module vraklib
 
 pub struct InternetAddress {
 pub mut:

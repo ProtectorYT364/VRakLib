@@ -1,7 +1,5 @@
 module vraklib
 
-import utils
-
 struct OpenConnectionReply2 {
 mut:
     p Packet

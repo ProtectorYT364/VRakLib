@@ -1,8 +1,5 @@
 module vraklib
 
-import protocol
-import utils
-
 const (
     max_split_size = 128
     max_split_count = 4
@@ -119,19 +116,19 @@ fn (mut s Session) update() {
         s.window_end += diff
     }
 
-    if s.ack_queue.size > 0 {
+    if s.ack_queue.len > 0 {
         //packet := Ack()
         //s.ack_queue = map[string]int{}
     }
 
-    if s.nack_queue.size > 0 {
+    if s.nack_queue.len > 0 {
         //packet := Nack()
         //s.nack_queue = map[string]int{}
     }
 
-    if s.need_ack.size > 0 {
+    if s.need_ack.len > 0 {
         for i, ack in s.need_ack {
-            if ack.m.size == 0 {
+            if ack.m.len == 0 {
                 s.need_ack[i]
                 //s.session_manager.notify_ack(s, i)
             }
@@ -177,7 +174,7 @@ fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order
         buffer: packet.buffer.buffer
         length: u16(packet.buffer.length)
         reliability: reliability
-        order_channel: order_channel
+        order_channel: byte(order_channel)
     }
     s.add_encapsulated_to_queue(encapsulated, flag)
 }
@@ -218,11 +215,11 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 
     if reliability_is_ordered(p.reliability) {
         p.order_index = s.send_ordered_index[p.order_channel]
-        s.send_ordered_index[p.order_channel] += 1
+        s.send_ordered_index[p.order_channel] ++
     } else if reliability_is_sequenced(p.reliability) {
         p.order_index = s.send_ordered_index[p.order_channel]
         p.sequence_index = s.send_sequenced_index[p.order_channel]
-        s.send_sequenced_index[p.order_channel] += 1
+        s.send_sequenced_index[p.order_channel] ++
     }
 
     max_size := u16(s.mtu_size) - u16(60)
@@ -326,7 +323,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
     }
 
     if !(packet.split_id.str() in s.split_packets) {
-        if s.split_packets.size >= max_split_size {
+        if s.split_packets.len >= max_split_size {
             return error('Invalid split packet part')
         }
         mut tmp := TmpMapEncapsulatedPacket{}
@@ -337,7 +334,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
         tmp.m[packet.split_index.str()] = packet
     }
 
-    if s.split_packets[packet.split_id.str()].m.size == packet.split_count {
+    if s.split_packets[packet.split_id.str()].m.len == packet.split_count {
         mut p := EncapsulatedPacket {}
         
         mut buffer := []byte{}

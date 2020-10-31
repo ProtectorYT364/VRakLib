@@ -1,4 +1,4 @@
-module utils
+module vraklib
 
 enum Endianness {
     little big

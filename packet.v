@@ -1,7 +1,6 @@
 module vraklib
 
 import math
-import utils
 
 const (
     raknet_magic_length = 16
