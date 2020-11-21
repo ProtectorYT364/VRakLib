@@ -1,5 +1,7 @@
 module vraklib
 
+//import net
+
 struct SessionManager {
 mut:
     server VRakLib
@@ -75,7 +77,7 @@ fn (mut s SessionManager) receive_packet() {
             pong.encode()
             pong.p.address = ping.p.address
 
-            s.socket.send(pong, pong.p)
+            s.socket.send(/*pong,*/ pong.p)
         } else if pid == id_open_connection_request1 {
             mut request := OpenConnectionRequest1 { p: new_packet_from_packet(packet) }
             request.decode()
@@ -89,7 +91,7 @@ fn (mut s SessionManager) receive_packet() {
                 incompatible.encode()
                 incompatible.p.address = request.p.address
 
-                s.socket.send(incompatible, incompatible.p)
+                s.socket.send(/*incompatible,*/ incompatible.p)
                 return
             }
 
@@ -102,7 +104,7 @@ fn (mut s SessionManager) receive_packet() {
             reply.encode()
             reply.p.address = request.p.address
 
-            s.socket.send(reply, reply.p)
+            s.socket.send(/*reply,*/ reply.p)
         } else if pid == id_open_connection_request2 {
             mut request := OpenConnectionRequest2 { p: new_packet_from_packet(packet) }
             request.decode()
@@ -122,7 +124,7 @@ fn (mut s SessionManager) receive_packet() {
             reply.encode()
             reply.p.address = request.p.address
 
-            s.socket.send(reply, reply.p)
+            s.socket.send(/*reply,*/ reply.p)
             s.create_session(request.p.address, request.client_id, request.mtu_size)
         }
     }
@@ -152,8 +154,8 @@ fn (mut s SessionManager) create_session(address InternetAddress, client_id u64,
     return &session
 }
 
-fn (s SessionManager) send_packet(packet DataPacketHandler, p Packet) {
-    s.socket.send(packet, p)
+fn (s SessionManager) send_packet(/*r RaklibPacket,*/ p Packet) {
+    s.socket.send(/*r,*/ p)
 }
 
 fn (mut s SessionManager) open_session(session Session) {

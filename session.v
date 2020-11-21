@@ -56,11 +56,13 @@ mut:
     is_temporal bool // true
 
     // packet_to_send 
+    packet_to_send []Datagram
     is_active bool // false
 
     ack_queue map[string]u32
     nack_queue map[string]u32
 
+    //maybe map[int]Datagram, key is seqNumber
     recovery_queue map[string]Datagram
 
     split_packets map[string]TmpMapEncapsulatedPacket
@@ -147,13 +149,14 @@ fn (mut s Session) send_datagram(datagram Datagram) {
     d.sequence_number = int(s.send_seq_number)
     s.send_seq_number++
     s.recovery_queue[d.sequence_number.str()] = datagram
-    s.send_packet(d, d.p)
+
+    s.send_packet(/*d,*/ d.p)
 }
 
-fn (s Session) send_packet(packet DataPacketHandler, p Packet) {
+fn (s Session) send_packet(/*r RaklibPacket,*/ p Packet) {
     mut pp := p
     pp.address = s.address
-    s.session_manager.send_packet(packet, pp)
+    s.session_manager.send_packet(/*r,*/ pp)
 }
 
 fn (s Session) send_ping(reliability int) {

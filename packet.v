@@ -74,6 +74,13 @@ pub mut:
     identifier_ack int
 }
 
+/*
+Datagram packets are used to implement a connectionless packet delivery service.
+Each message is routed from one machine to another based solely on information
+contained within that packet. Multiple packets sent from one machine to another
+might be routed differently, and might arrive in any order.
+Packet delivery is not guaranteed.
+*/
 struct Datagram {
 pub mut:
     p Packet

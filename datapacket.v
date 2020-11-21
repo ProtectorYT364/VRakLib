@@ -21,8 +21,11 @@ const (
 
     id_user_packet_enum = 0x86
 )
+//todo add connected_ping, id_un_connected_ping_open_connections
+type RaklibPacket = UnConnectedPing | OpenConnectionRequest1 | OpenConnectionReply1 | OpenConnectionRequest2 | OpenConnectionReply2 | ConnectionRequest | ConnectionRequestAccepted | NewIncomingConnection | IncompatibleProtocolVersion | UnConnectedPong
 
-interface DataPacketHandler {
+
+/*interface DataPacketHandler {
     encode()
     decode()
-}
+}*/
