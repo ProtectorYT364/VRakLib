@@ -24,7 +24,6 @@ pub fn create_socket(ip string, port int) ?UdpSocket {
     mut conn := net.listen_udp(port) or {
         panic(err)
     }
-    println(conn.str())
     return UdpSocket{ conn }
 }
 
@@ -54,8 +53,31 @@ fn (s UdpSocket) receive() ?Packet {
 	}
 	println('Got address $addr')
 	println('Got $read bytes')
-	println('Got "${buf.bytestr()}"')
-	println('Got "$buf"')
+	//println('Got "${buf.bytestr()}"')
+	//println('Got "${&buf}"')
+
+    mut test := buf.str()
+    mut test1 := buf.str().bytes()
+
+    mut buffr := new_bytebuffer(&test, u32(read))
+    buffr.print()
+    buffr.position = 0
+    mut abc := new_bytebuffer(&test1, u32(read))
+    abc.print()
+    abc.position = 0
+    abc = new_bytebuffer(&buf, u32(read))
+    abc.print()
+    abc.position = 0
+    //new_bytebuffer(&buf.str(), u32(read)).print()
+
+
+    //return none
+    mut packt := Packet{
+        buffer: buffr
+        address: InternetAddress { ip: addr.saddr, port: u16(addr.port), version: byte(4) }
+    }
+
+    println(packt)
 
     return none
 
