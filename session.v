@@ -1,5 +1,7 @@
 module vraklib
 
+import net
+
 const (
     max_split_size = 128
     max_split_count = 4
@@ -40,7 +42,7 @@ mut:
 
     // logger logger
 
-    address InternetAddress
+    address net.Addr
 
     state State // connecting
 
@@ -86,8 +88,8 @@ mut:
     internal_id int
 }
 
-fn new_session(session_manager SessionManager, address InternetAddress, client_id u64, mtu_size u16, internal_id int) Session {
-    println('$address.ip, $address.port, $client_id, $mtu_size, $internal_id')
+fn new_session(session_manager SessionManager, address net.Addr, client_id u64, mtu_size u16, internal_id int) Session {
+    println('$address.saddr, $address.port, $client_id, $mtu_size, $internal_id')
     session := Session {
         send_ordered_index: [0].repeat(channel_count)
         send_sequenced_index: [0].repeat(channel_count)
@@ -447,8 +449,8 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 
                 mut accepted := ConnectionRequestAccepted {
                     p: new_packet([byte(0)].repeat(96).data, u32(96))
-                    ping_time: connection.ping_time
-                    pong_time: s.session_manager.get_raknet_time_ms() // TODO
+                    request_timestamp: connection.request_timestamp
+                    accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
                 }
                 accepted.encode()
                 accepted.p.address = connection.p.address
@@ -458,7 +460,7 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
                 mut connection := NewIncomingConnection { p: new_packet(packet.buffer, u32(packet.length)) }
                 connection.decode()
 
-                if connection.address.port == u16(19132) || !s.session_manager.port_checking {
+                if connection.server_address.port == 19132 || !s.session_manager.port_checking {
                     s.state = .connected
                     s.is_temporal = false
                     //s.session_manager.open_session(s)

@@ -1,5 +1,8 @@
 module vraklib
 
+//import encoding.binary//endian + put/get methods
+//import io//BufferedReader
+
 enum Endianness {
     little big
 }
@@ -19,6 +22,10 @@ pub fn new_bytebuffer(buffer byteptr, size u32) ByteBuffer {
         length: size
         position: u32(0)
     }
+}
+
+pub fn (mut b ByteBuffer) len() u32 {
+    return b.length
 }
 
 pub fn (mut b ByteBuffer) put_byte(v byte) {
@@ -51,6 +58,8 @@ pub fn (mut b ByteBuffer) put_bool(v bool) {
     b.position++
 }
 
+//https://doc.rust-lang.org/std/primitive.i16.html
+//-32768...32767
 pub fn (mut b ByteBuffer) put_short(v i16) {
     assert b.position + u32(sizeof(i16)) <= b.length
 
@@ -65,6 +74,8 @@ pub fn (mut b ByteBuffer) put_short(v i16) {
     b.position += u32(sizeof(i16))
 }
 
+//https://doc.rust-lang.org/std/primitive.u16.html
+//0...65535
 pub fn (mut b ByteBuffer) put_ushort(v u16) {
     assert b.position + u32(sizeof(u16)) <= b.length
 
@@ -222,7 +233,7 @@ pub fn (mut b ByteBuffer) put_string(v string) {
     }
 }
 
-pub fn (mut b ByteBuffer) get_bytes(size int) byteptr {
+pub fn (mut b ByteBuffer) get_bytes(size int) /*byteptr*/[]byte {
     assert b.position + u32(size) <= b.length
 
     if size == 0 {
@@ -237,7 +248,8 @@ pub fn (mut b ByteBuffer) get_bytes(size int) byteptr {
         i++
     }
     b.position += u32(size)
-    return v.data
+    //return v.data
+    return v
 }
 
 pub fn (mut b ByteBuffer) get_byte() byte {

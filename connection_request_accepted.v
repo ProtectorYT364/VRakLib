@@ -1,26 +1,37 @@
 module vraklib
 
+import net
+
 struct ConnectionRequestAccepted {
 mut:
     p Packet
 
-    ping_time i64
-    pong_time i64
+    client_address net.Addr
+    system_addresses [20]net.Addr
+	request_timestamp  u64
+	accepted_timestamp u64
 }
 
 fn (mut r ConnectionRequestAccepted) encode() {
     r.p.buffer.put_byte(id_connection_request_accepted)
-    r.p.put_address(r.p.address)
+    r.p.put_address(r.client_address)
     r.p.buffer.put_short(i16(0))
-
-    r.p.put_address(InternetAddress { ip: '127.0.0.1', port: u16(0), version: 4 })
-    mut i := 0
-    for i < 9 {
-        r.p.put_address(InternetAddress { ip: '0.0.0.0', port: u16(0), version: 4 })
-        i++
-    }
-    r.p.buffer.put_long(r.ping_time)
-    r.p.buffer.put_long(r.pong_time)
+    for _, addr in r.system_addresses {
+		r.p.put_address(addr)
+	}
+    r.p.buffer.put_ulong(r.request_timestamp)
+    r.p.buffer.put_ulong(r.accepted_timestamp)
 }
 
-fn (mut r ConnectionRequestAccepted) decode() {}
+fn (mut r ConnectionRequestAccepted) decode() {
+	r.client_address = r.p.get_address()
+	/* _ =  */r.p.buffer.get_bytes(2)
+	for i := 0; i < 20; i++ {
+		r.system_addresses[i] = r.p.get_address()
+		if r.p.buffer.len() == 16 {
+			break
+		}
+	}
+    r.request_timestamp = r.p.buffer.get_ulong()
+    r.accepted_timestamp = r.p.buffer.get_ulong()
+}

@@ -11,7 +11,7 @@ mut:
     s net.UdpConn
 }
 
-pub fn create_socket(ip string, port int) ?UdpSocket {
+pub fn create_socket(port int) /*(net.Addr, ?UdpSocket)*/?UdpSocket {
 //	s := net.socket_udp() or { panic(err) }
 //    // level, optname, optvalue
 //    bufsize := default_buffer_size
@@ -19,72 +19,33 @@ pub fn create_socket(ip string, port int) ?UdpSocket {
 //    zero := 0
 //    s.setsockopt(C.SOL_SOCKET, C.SO_REUSEADDR, &zero)
 //	s.bind( port ) or { panic(err) }
-//
-//    return UdpSocket{ s }
+
     mut conn := net.listen_udp(port) or {
         panic(err)
     }
-    return UdpSocket{ conn }
+
+    address := conn.sock.address()
+
+    return /*address,*/ UdpSocket{ conn }
 }
 
 fn (s UdpSocket) receive() ?Packet {
     bufsize := default_buffer_size
-	//bytes := [default_buffer_size]byte{}
-
-	//res := s.s.crecv(bytes, bufsize)
-    //if res == -1 {
-    //    return error('Could not receive the packet.')
-    //}
-	//print('Received $res bytes: ' + tos(bytes, res))
-
-    //ip := s.s.peer_ip() or { return error('ip cant be get') }
-    //port := s.s.get_port()
-	//print('IP is $ip, Port is $port')
-
-    //return Packet {
-    //    buffer: new_bytebuffer(bytes, u32(res))
-    //    address: InternetAddress { ip: ip, port: u16(port), version: byte(4) }
-    //}
 
     mut c := s.s
 	mut buf := []byte{ len: bufsize, init: 0 }
 	read, addr := c.read(mut buf) or {
 		return none
 	}
+    
+    //mut test := buf.str()
 	println('Got address $addr')
 	println('Got $read bytes')
-	//println('Got "${buf.bytestr()}"')
-	//println('Got "${&buf}"')
 
-    mut test := buf.str()
-    mut test1 := buf.str().bytes()
-
-    mut buffr := new_bytebuffer(&test, u32(read))
-    buffr.print()
-    buffr.position = 0
-    mut abc := new_bytebuffer(&test1, u32(read))
-    abc.print()
-    abc.position = 0
-    abc = new_bytebuffer(&buf, u32(read))
-    abc.print()
-    abc.position = 0
-    //new_bytebuffer(&buf.str(), u32(read)).print()
-
-
-    //return none
-    mut packt := Packet{
-        buffer: buffr
-        address: InternetAddress { ip: addr.saddr, port: u16(addr.port), version: byte(4) }
-    }
-
-    println(packt)
-
-    return none
-
-    //return Packet {
-    //    buffer: new_bytebuffer(buf, u32(read))
-    //    address: InternetAddress { ip: ip, port: u16(port), version: byte(4) }
-    //}
+    /* return Packet{
+        buffer: new_bytebuffer(&test, u32(read))
+        address: addr
+    } */
 }
 
 fn (s UdpSocket) send(/*r RaklibPacket,*/ p Packet) ?int {

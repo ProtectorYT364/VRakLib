@@ -4,17 +4,21 @@ struct ConnectionRequest {
 mut:
     p Packet
 
-    client_id i64
-    ping_time i64
-    use_security bool
+	client_guid u64
+	request_timestamp u64
+	secure bool
 }
 
-fn (mut r ConnectionRequest) encode() {}
+fn (mut r ConnectionRequest) encode() {
+    r.p.buffer.put_byte(id_connection_request)
+    r.p.buffer.put_ulong(r.client_guid)
+    r.p.buffer.put_ulong(r.request_timestamp)
+    r.p.buffer.put_bool(r.secure)
+}
 
 fn (mut r ConnectionRequest) decode() {
-    println('debug')
     r.p.buffer.get_byte()
-    r.client_id = r.p.buffer.get_long()
-    r.ping_time = r.p.buffer.get_long()
-    r.use_security = r.p.buffer.get_bool()
+    r.client_guid = r.p.buffer.get_ulong()
+    r.request_timestamp = r.p.buffer.get_ulong()
+    r.secure = r.p.buffer.get_bool()
 }

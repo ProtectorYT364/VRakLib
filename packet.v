@@ -1,6 +1,7 @@
 module vraklib
 
 import math
+import net
 
 const (
     raknet_magic_length = 16
@@ -20,7 +21,7 @@ pub struct Packet {
 pub mut:
     buffer ByteBuffer
 
-    address InternetAddress
+    address net.Addr
 }
 
 fn new_packet_from_packet(packet Packet) Packet {
@@ -46,15 +47,34 @@ fn get_packet_magic() []byte {
     return [ byte(0x00), 0xff, 0xff, 0x00, 0xfe, 0xfe, 0xfe, 0xfe, 0xfd, 0xfd, 0xfd, 0xfd, 0x12, 0x34, 0x56, 0x78 ]
 }
 
-fn (mut p Packet) put_address(address InternetAddress) {
-    p.buffer.put_byte(address.version)
-    if address.version == 4 {
-        numbers := address.ip.split('.')
+fn (mut p Packet) put_address(address net.Addr) {
+    p.buffer.put_byte(4)
+    //if address.version == 4 {
+        numbers := address.saddr.split('.')
         for num in numbers {
             p.buffer.put_char(i8(~num.int() & 0xFF))
         }
         p.buffer.put_ushort(u16(address.port))
+    //}
+    //TODO IPv6
+}
+
+fn (mut p Packet) get_address() net.Addr {
+    ver := p.buffer.get_byte()
+    if ver == 4 {
+        ip_bytes := p.buffer.get_bytes(4)
+        port := p.buffer.get_ushort()//u16(address.port)
+        println(ip_bytes.str())//TODO
+        println(port.str())//TODO
+
+        //HACK
+        address := net.Addr{ saddr: ((-ip_bytes[0]-1)&0xff).str() + '.' + ((-ip_bytes[1]-1)&0xff).str() + '.' + ((-ip_bytes[2]-1)&0xff).str() + '.' + ((-ip_bytes[3]-1)&0xff).str(), port: port}
+        println(address)
+        return address
+    } else {
+        panic('Only IPv4 is supported for now')
     }
+    //TODO IPv6
 }
 
 struct EncapsulatedPacket {
@@ -99,7 +119,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
         internal_packet.reliability = (flags & 0xE0) >> 5
         internal_packet.has_split = (flags & 0x10) > 0
 
-        length := math.ceil(f32(packet.buffer.get_ushort()) / f32(8))
+        length := int(math.ceil(f32(packet.buffer.get_ushort()) / f32(8)))
         internal_packet.length = u16(length)
 
         if internal_packet.reliability > reliability_unreliable {
@@ -119,7 +139,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
             internal_packet.split_id == u16(packet.buffer.get_short())
             internal_packet.split_index == packet.buffer.get_int()
         }
-        internal_packet.buffer = packet.buffer.get_bytes(int(length))
+        internal_packet.buffer = packet.buffer.get_bytes(&length).data
         packets << internal_packet
         // println('length: ${internal_packet.length}')
         // println('reliability: ${internal_packet.reliability}')

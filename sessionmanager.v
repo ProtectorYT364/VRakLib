@@ -1,6 +1,7 @@
 module vraklib
 
-//import net
+import net
+import time
 
 struct SessionManager {
 mut:
@@ -12,7 +13,7 @@ mut:
 
     shutdown bool
 
-    start_time_ms int
+    stopwatch time.StopWatch
 
     port_checking bool
 
@@ -23,13 +24,13 @@ fn new_session_manager(r VRakLib, socket UdpSocket) &SessionManager {
     sm := &SessionManager {
         server: r
         socket: socket
-        start_time_ms: 0 // TODO
+        stopwatch: time.new_stopwatch({})
     }
     return sm
 }
 
 fn (s SessionManager) get_raknet_time_ms() i64 {
-    return 0 - s.start_time_ms // TODO
+    return s.stopwatch.elapsed().milliseconds()
 }
 
 pub fn (mut s SessionManager) run() {
@@ -44,9 +45,15 @@ pub fn (mut s SessionManager) run() {
 
 fn (mut s SessionManager) receive_packet() {
     packet := s.socket.receive() or { return }
+    if packet.address.saddr != '192.168.43.240' { return }
+    println("received!")
+    println(packet)
+    packet.buffer.print()
     pid := unsafe { packet.buffer.buffer[0] }
+    println("pid $pid")
 
     if s.session_exists(packet.address) {
+        println("Session exists: ${packet.address}")
         mut session := s.get_session_by_address(packet.address)
 
         if (pid & bitflag_valid) != 0 {
@@ -62,7 +69,8 @@ fn (mut s SessionManager) receive_packet() {
             }
         }
     } else {
-        if pid == id_un_connected_ping {
+        println("Session not found: ${packet.address}")
+        if pid == id_unconnected_ping {
             mut ping := UnConnectedPing { p: new_packet_from_packet(packet) }
             ping.decode()
 
@@ -70,9 +78,9 @@ fn (mut s SessionManager) receive_packet() {
             len := 35 + title.len
             mut pong := UnConnectedPong {
                 p: new_packet([byte(0)].repeat(len).data, u32(len))
-                server_id: 123456789
-                ping_id: ping.ping_id
-                str: title
+                server_guid: 123456789
+                send_timestamp: ping.send_timestamp
+                data: title.bytes()
             }
             pong.encode()
             pong.p.address = ping.p.address
@@ -82,11 +90,11 @@ fn (mut s SessionManager) receive_packet() {
             mut request := OpenConnectionRequest1 { p: new_packet_from_packet(packet) }
             request.decode()
             
-            if request.version != 9 {
+            if request.protocol != 9 {
                 mut incompatible := IncompatibleProtocolVersion {
                     p: new_packet([byte(0)].repeat(26).data, u32(26))
-                    version: 9
-                    server_id: 123456789
+                    protocol: 9
+                    server_guid: 123456789
                 }
                 incompatible.encode()
                 incompatible.p.address = request.p.address
@@ -97,8 +105,8 @@ fn (mut s SessionManager) receive_packet() {
 
             mut reply := OpenConnectionReply1 {
                 p: new_packet([byte(0)].repeat(28).data, u32(28))
-                security: false
-                server_id: 123456789
+                secure: false
+                server_guid: 123456789
                 mtu_size: request.mtu_size + u16(28)
             }
             reply.encode()
@@ -110,35 +118,35 @@ fn (mut s SessionManager) receive_packet() {
             request.decode()
 
             if request.mtu_size < u16(min_mtu_size) {
-                println('Not creating session for ${packet.address.ip} due to bad MTU size ${request.mtu_size}')
+                println('Not creating session for ${packet.address} due to bad MTU size ${request.mtu_size}')
                 return
             }
 
             mut reply := OpenConnectionReply2 {
                 p: new_packet([byte(0)].repeat(35).data, u32(35))
-                server_id: 123456789
+                server_guid: 123456789
                 client_address: request.p.address
                 mtu_size: request.mtu_size
-                security: false
+                secure: false
             }
             reply.encode()
             reply.p.address = request.p.address
 
             s.socket.send(/*reply,*/ reply.p)
-            s.create_session(request.p.address, request.client_id, request.mtu_size)
+            s.create_session(request.p.address, request.client_guid, request.mtu_size)
         }
     }
 }
 
-fn (s SessionManager) get_session_by_address(address InternetAddress) Session {
-    return s.session_by_address['$address.ip:${address.port.str()}']
+fn (s SessionManager) get_session_by_address(address net.Addr) Session {
+    return s.session_by_address[address.str()]
 }
 
-fn (s SessionManager) session_exists(address InternetAddress) bool {
-    return '$address.ip:${address.port.str()}' in s.session_by_address
+fn (s SessionManager) session_exists(address net.Addr) bool {
+    return address.str() in s.session_by_address
 }
 
-fn (mut s SessionManager) create_session(address InternetAddress, client_id u64, mtu_size u16) &Session {
+fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_size u16) &Session {
     for {
         if s.next_session_id.str() in s.sessions {
             s.next_session_id++
@@ -150,7 +158,7 @@ fn (mut s SessionManager) create_session(address InternetAddress, client_id u64,
 
     session := new_session(s, address, client_id, mtu_size, s.next_session_id)
     s.sessions[s.next_session_id.str()] = session
-    s.session_by_address['$address.ip:${address.port.str()}'] = session
+    s.session_by_address[address.str()] = session
     return &session
 }
 

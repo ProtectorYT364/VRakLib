@@ -1,11 +1,14 @@
 module vraklib
 
+import net
+
 pub struct VRakLib {
 pub mut:
     channel_sessions chan OpenSessionData
     channel_encapsulated chan HandleEncapsulatedData
     channel_packetdata chan PutPacketData
-    address InternetAddress
+    port int
+    address net.Addr
     //session_manager &SessionManager
     session_manager &SessionManager
     shutdown bool
@@ -14,7 +17,10 @@ pub mut:
 pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulatedData, ch3 chan PutPacketData) {
     r.shutdown = false
 
-    socket := create_socket(r.address.ip, int(r.address.port)) or { panic(err) }
+    /*address,*/ socket := create_socket(r.port) or { panic(err) }
+    r.address = socket.s.sock.address()
+    println(r.port)
+    println(r.address)
     mut session_manager := new_session_manager(r, socket)
     r.session_manager = session_manager
 
@@ -33,7 +39,7 @@ fn (r VRakLib) close_session() {
 
 }
 
-fn (mut r VRakLib) open_session(identifier string, address InternetAddress, client_id u64) {
+fn (mut r VRakLib) open_session(identifier string, address net.Addr, client_id u64) {
     data := OpenSessionData { identifier, address, client_id }
     r.channel_sessions <- data
 }
@@ -57,7 +63,7 @@ fn (r VRakLib) update_ping() {
 struct OpenSessionData {
 mut:
 	identifier string
-    address InternetAddress
+    address net.Addr
     client_id u64
 }
 
