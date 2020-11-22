@@ -44,37 +44,40 @@ pub fn (mut s SessionManager) run() {
 }
 
 fn (mut s SessionManager) receive_packet() {
-    packet := s.socket.receive() or { return }
-    if packet.address.saddr != '192.168.43.240' { return }
+    mut packet := s.socket.receive() or { return }
+    //if packet.address.saddr != '192.168.43.240' { return }
     println("received!")
     println(packet)
     packet.buffer.print()
-    pid := unsafe { packet.buffer.buffer[0] }
-    println("pid $pid")
+    pid := packet.buffer.get_byte()
 
     if s.session_exists(packet.address) {
         println("Session exists: ${packet.address}")
         mut session := s.get_session_by_address(packet.address)
 
         if (pid & bitflag_valid) != 0 {
+            println("valid $pid")
             if (pid & bitflag_ack) != 0 {
+                println("ack $pid")
                 // ACK
                 println('ack')
             } else if (pid & bitflag_nak) != 0 {
+                println("nack $pid")
                 // NACK
                 println('nack')
             } else {
+                println("datagram $pid")
                 datagram := Datagram { p: new_packet_from_packet(packet) }
                 session.handle_packet(datagram)
             }
         }
     } else {
-        println("Session not found: ${packet.address}")
+        println("Session not found: ${packet.address} $pid")
         if pid == id_unconnected_ping {
             mut ping := UnConnectedPing { p: new_packet_from_packet(packet) }
             ping.decode()
 
-            title := 'MCPE;Minecraft V Server!;361;1.12.0;0;100;123456789;Test;Survival;'
+            title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;123456789;boundstone;Creative;'
             len := 35 + title.len
             mut pong := UnConnectedPong {
                 p: new_packet([byte(0)].repeat(len).data, u32(len))
@@ -83,6 +86,7 @@ fn (mut s SessionManager) receive_packet() {
                 data: title.bytes()
             }
             pong.encode()
+            println(pong)
             pong.p.address = ping.p.address
 
             s.socket.send(/*pong,*/ pong.p)
@@ -93,7 +97,7 @@ fn (mut s SessionManager) receive_packet() {
             if request.protocol != 9 {
                 mut incompatible := IncompatibleProtocolVersion {
                     p: new_packet([byte(0)].repeat(26).data, u32(26))
-                    protocol: 9
+                    protocol: 10
                     server_guid: 123456789
                 }
                 incompatible.encode()

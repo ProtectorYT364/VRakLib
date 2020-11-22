@@ -89,7 +89,7 @@ mut:
 }
 
 fn new_session(session_manager SessionManager, address net.Addr, client_id u64, mtu_size u16, internal_id int) Session {
-    println('$address.saddr, $address.port, $client_id, $mtu_size, $internal_id')
+    println('${address.saddr}, ${address.port}, $client_id, $mtu_size, $internal_id')
     session := Session {
         send_ordered_index: [0].repeat(channel_count)
         send_sequenced_index: [0].repeat(channel_count)
@@ -161,10 +161,11 @@ fn (s Session) send_packet(/*r RaklibPacket,*/ p Packet) {
     s.session_manager.send_packet(/*r,*/ pp)
 }
 
-fn (s Session) send_ping(reliability int) {
-    //packet := connected_ping {}
-    //packet.send_ping_time = s.session_manager.get_raknet_time_ms()
-    //s.queue_connected_packet(packet.p, reliability, 0, priority_immediate)
+fn (mut s Session) send_ping(reliability byte) {
+    packet := ConnectedPing {
+        client_timestamp: u64(s.session_manager.get_raknet_time_ms())
+    }
+    s.queue_connected_packet(packet.p, reliability, 0, priority_immediate)
 }
 
 fn (mut s Session) send_queue() {
@@ -439,7 +440,8 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 }
 
 fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
-    pid := unsafe { packet.buffer[0] }
+    pid := packet.buffer[0]
+    println("Encapsulated, $pid")
 
     if pid < id_user_packet_enum {
         if s.state == .connecting {
@@ -463,8 +465,8 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
                 if connection.server_address.port == 19132 || !s.session_manager.port_checking {
                     s.state = .connected
                     s.is_temporal = false
-                    //s.session_manager.open_session(s)
-                    //s.send_ping(reliability_unreliable)
+                    s.session_manager.open_session(s)
+                    s.send_ping(reliability_unreliable)
                 }
                 println('NEW INCOMING CONNECTION')
             }

@@ -17,7 +17,8 @@ pub mut:
 
 pub fn new_bytebuffer(buffer byteptr, size u32) ByteBuffer {
     return ByteBuffer{
-        endianness: Endianness.little // Network order
+        //endianness: Endianness.little // Network order
+        endianness: Endianness.big // Network order
         buffer: buffer
         length: size
         position: u32(0)

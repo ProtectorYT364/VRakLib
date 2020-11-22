@@ -22,7 +22,7 @@ const (
 
     id_user_packet_enum = 0x86
 )
-//todo add id_un_connected_ping_open_connections
+
 type RaklibPacket = ConnectedPing | UnConnectedPing | ConnectedPong | OpenConnectionRequest1 | OpenConnectionReply1 | OpenConnectionRequest2 | OpenConnectionReply2 | ConnectionRequest | ConnectionRequestAccepted | NewIncomingConnection | IncompatibleProtocolVersion | UnConnectedPong
 
 

@@ -11,7 +11,7 @@ mut:
     s net.UdpConn
 }
 
-pub fn create_socket(port int) /*(net.Addr, ?UdpSocket)*/?UdpSocket {
+pub fn create_socket(port int) ?UdpSocket {
 //	s := net.socket_udp() or { panic(err) }
 //    // level, optname, optvalue
 //    bufsize := default_buffer_size
@@ -24,9 +24,7 @@ pub fn create_socket(port int) /*(net.Addr, ?UdpSocket)*/?UdpSocket {
         panic(err)
     }
 
-    address := conn.sock.address()
-
-    return /*address,*/ UdpSocket{ conn }
+    return UdpSocket{ conn }
 }
 
 fn (s UdpSocket) receive() ?Packet {
@@ -38,14 +36,15 @@ fn (s UdpSocket) receive() ?Packet {
 		return none
 	}
     
-    //mut test := buf.str()
-	println('Got address $addr')
-	println('Got $read bytes')
+    mut test := buf.str()
+	//println('Got address $addr')
+	//println('Got $read bytes')
+	//println('Got ${buf.data} bytes')
 
-    /* return Packet{
+    return Packet{
         buffer: new_bytebuffer(&test, u32(read))
         address: addr
-    } */
+    }
 }
 
 fn (s UdpSocket) send(/*r RaklibPacket,*/ p Packet) ?int {
@@ -63,7 +62,7 @@ fn (s UdpSocket) send(/*r RaklibPacket,*/ p Packet) ?int {
     //    return error('Could not send the packet')
     //}
     //return res
-
+    println("UdpSocket send")
     println(p.address)
     p.buffer.print()
 }

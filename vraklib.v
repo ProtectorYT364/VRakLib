@@ -18,7 +18,7 @@ pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulat
     r.shutdown = false
 
     /*address,*/ socket := create_socket(r.port) or { panic(err) }
-    r.address = socket.s.sock.address()
+    r.address = socket.s.sock.address() or { panic(err) }
     println(r.port)
     println(r.address)
     mut session_manager := new_session_manager(r, socket)
