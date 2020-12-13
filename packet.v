@@ -25,13 +25,13 @@ pub mut:
 	length         u16
 	reliability    byte
 	has_split      bool
-	message_index  int
-	sequence_index int
-	order_index    int
-	order_channel  byte
-	split_count    int
+	message_index  u32 //u24
+	sequence_index u32 //u24
+	order_index    u32 //u24
+	order_channel  int
+	split_count    u32
 	split_id       u16
-	split_index    int
+	split_index    u32
 	need_ack       bool
 	identifier_ack int
 }
@@ -45,7 +45,7 @@ struct Datagram {
 pub mut:
 	p               Packet
 	packet_id       byte
-	sequence_number int = -1
+	sequence_number u32 = -1
 	packets         []EncapsulatedPacket
 }
 
@@ -109,7 +109,7 @@ fn (mut p Packet) get_address() net.Addr {
 	// TODO IPv6
 }
 
-fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
+fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
 	mut packets := []EncapsulatedPacket{}
 	mut packet := p
 	for packet.buffer.position < packet.buffer.length {
@@ -128,13 +128,15 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
 			}
 			if reliability_is_sequenced_or_ordered(internal_packet.reliability) {
 				internal_packet.order_index = packet.buffer.get_ltriad()
-				internal_packet.order_channel = packet.buffer.get_byte()
+				// Order channel, we don't care about this.
+				//internal_packet.order_channel =
+				_ = packet.buffer.get_byte()
 			}
 		}
 		if internal_packet.has_split {
-			internal_packet.split_count = packet.buffer.get_int()
-			internal_packet.split_id = u16(packet.buffer.get_short())
-			internal_packet.split_index = packet.buffer.get_int()
+			internal_packet.split_count = u32(packet.buffer.get_int())//TODO check if this needs to be uint
+			internal_packet.split_id = u16(packet.buffer.get_short())//TODO check if this needs to be ushort
+			internal_packet.split_index = u32(packet.buffer.get_int())//TODO check if this needs to be uint
 		}
 		internal_packet.buffer = packet.buffer.get_bytes(&length).data
 		packets << internal_packet
@@ -152,7 +154,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
 	return packets
 }
 
-fn (p EncapsulatedPacket) to_binary() Packet {
+fn (p EncapsulatedPacket) to_binary() Packet {//AKA write
 	mut packet := Packet{
 		buffer: new_bytebuffer([byte(0)].repeat(int(p.get_length())).data, p.get_length())
 	}
@@ -170,12 +172,13 @@ fn (p EncapsulatedPacket) to_binary() Packet {
 	}
 	if reliability_is_sequenced_or_ordered(p.reliability) {
 		packet.buffer.put_ltriad(p.order_index)
-		packet.buffer.put_byte(p.order_channel)
+		// Order channel, we don't care about this.
+		packet.buffer.put_byte(0)
 	}
 	if p.has_split {
-		packet.buffer.put_int(p.split_count)
-		packet.buffer.put_short(i16(p.split_id))
-		packet.buffer.put_int(p.split_index)
+		packet.buffer.put_int(int(p.split_count))//TODO check if this needs to be uint
+		packet.buffer.put_short(i16(p.split_id))//TODO check if this needs to be ushort
+		packet.buffer.put_int(int(p.split_index))//TODO check if this needs to be uint
 	}
 	packet.buffer.put_bytes(p.buffer, int(p.length))
 	return packet

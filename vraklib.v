@@ -33,7 +33,7 @@ pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulat
 	 r.channel_packetdata = ch3
 
 	mut session_manager := new_session_manager(r, socket)
-	r.session_manager = &session_manager
+	r.session_manager = session_manager
 	go session_manager.run()
 }
 

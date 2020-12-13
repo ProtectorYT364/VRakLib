@@ -97,7 +97,7 @@ pub fn (mut b ByteBuffer) put_ushort(v u16) {
 	b.position += u32(sizeof(u16))
 }
 
-pub fn (mut b ByteBuffer) put_triad(v int) {
+pub fn (mut b ByteBuffer) put_triad(v u32) {
 	assert b.position + u32(3) <= b.length
 	unsafe {
 		b.buffer[b.position] = byte(v >> 16)
@@ -107,7 +107,7 @@ pub fn (mut b ByteBuffer) put_triad(v int) {
 	b.position += u32(3)
 }
 
-pub fn (mut b ByteBuffer) put_ltriad(v int) {
+pub fn (mut b ByteBuffer) put_ltriad(v u32) {
 	assert b.position + u32(3) <= b.length
 	unsafe {
 		b.buffer[b.position] = byte(v)
@@ -291,20 +291,20 @@ pub fn (mut b ByteBuffer) get_ushort() u16 {
 	return v
 }
 
-pub fn (mut b ByteBuffer) get_triad() int {
+pub fn (mut b ByteBuffer) get_triad() u32 {
 	assert b.position + u32(3) <= b.length
 	v := unsafe {int(int(b.buffer[b.position]) << int(16)) | int(int(b.buffer[b.position + u32(1)]) <<
 		int(8)) | int(b.buffer[b.position + u32(2)])}
 	b.position += u32(3)
-	return v
+	return u32(v)
 }
 
-pub fn (mut b ByteBuffer) get_ltriad() int {
+pub fn (mut b ByteBuffer) get_ltriad() u32 {
 	assert b.position + u32(3) <= b.length
 	v := unsafe {int(b.buffer[b.position]) | int(int(b.buffer[b.position + u32(1)]) << int(8)) |
 		int(int(b.buffer[b.position + u32(2)]) << int(16))}
 	b.position += u32(3)
-	return v
+	return u32(v)
 }
 
 pub fn (mut b ByteBuffer) get_int() int {

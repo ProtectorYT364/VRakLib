@@ -24,16 +24,16 @@ mut:
 
 struct TmpMapInt {
 mut:
-	m map[string]int
+	m map[string]int//u32?
 }
 
-struct Session {
+struct Session {//This is Conn in go-raknet
 mut:
-	message_index                   int
-	send_ordered_index              []int
-	send_sequenced_index            []int
-	receive_ordered_index           []int
-	receive_sequenced_highest_index []int
+	message_index                   u32 //u24
+	send_ordered_index              []u32 //u24
+	send_sequenced_index            []int//u32?
+	receive_ordered_index           []int//u32?
+	receive_sequenced_highest_index []int//u32?
 	receive_ordered_packets         [][]EncapsulatedPacket
 	session_manager                 SessionManager
 	// logger logger
@@ -42,9 +42,9 @@ mut:
 	// connecting
 	mtu_size                        u16
 	id                              u64
-	split_id                        int
+	split_id                        u32
 	// 0
-	send_seq_number                 u32
+	send_seq_number                 u32 //u24
 	// 0
 	last_update                     f32
 	disconnection_time              f32
@@ -59,7 +59,7 @@ mut:
 	// maybe map[int]Datagram, key is seqNumber
 	recovery_queue                  map[string]Datagram
 	split_packets                   map[string]TmpMapEncapsulatedPacket
-	need_ack                        map[string]TmpMapInt
+	need_ack                        map[string]TmpMapInt//u32?
 	send_queue_data                 Datagram
 	window_start                    u32
 	window_end                      u32
@@ -77,7 +77,7 @@ mut:
 fn new_session(session_manager SessionManager, address net.Addr, client_id u64, mtu_size u16, internal_id int) Session {
 	println('$address.saddr, $address.port, $client_id, $mtu_size, $internal_id')
 	session := Session{
-		send_ordered_index: [0].repeat(channel_count)
+		send_ordered_index: [u32(0)].repeat(channel_count)
 		send_sequenced_index: [0].repeat(channel_count)
 		receive_ordered_index: [0].repeat(channel_count)
 		receive_sequenced_highest_index: [0].repeat(channel_count)
@@ -123,7 +123,7 @@ fn (mut s Session) send_datagram(datagram Datagram) {
 	if datagram.sequence_number != -1 {
 		s.recovery_queue.delete(datagram.sequence_number.str())
 	}
-	d.sequence_number = int(s.send_seq_number)
+	d.sequence_number = s.send_seq_number
 	s.send_seq_number++
 	s.recovery_queue[d.sequence_number.str()] = datagram
 	// d,
@@ -158,7 +158,7 @@ fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order
 		buffer: packet.buffer.buffer
 		length: u16(packet.buffer.length)
 		reliability: reliability
-		order_channel: byte(order_channel)
+		order_channel: order_channel
 	}
 	s.add_encapsulated_to_queue(encapsulated, flag)
 }
@@ -168,7 +168,7 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 	priority := flags & 0x07
 	if p.need_ack && p.message_index != -1 {
 		mut arr := s.need_ack[p.identifier_ack.str()]
-		arr.m[p.message_index.str()] = p.message_index
+		arr.m[p.message_index.str()] = int(p.message_index)
 	}
 	length := s.send_queue_data.get_total_length()
 	if u32(length) + p.get_length() > u32(s.mtu_size - u16(36)) {
@@ -197,7 +197,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 		s.send_ordered_index[p.order_channel]++
 	} else if reliability_is_sequenced(p.reliability) {
 		p.order_index = s.send_ordered_index[p.order_channel]
-		p.sequence_index = s.send_sequenced_index[p.order_channel]
+		p.sequence_index = u32(s.send_sequenced_index[p.order_channel])
 		s.send_sequenced_index[p.order_channel]++
 	}
 	max_size := u16(s.mtu_size) - u16(60)
@@ -208,7 +208,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 		mut offset := u16(0)
 		for offset < p.length {
 			if offset + max_size > p.length {
-				buffers << packet_buffers.substr(int(offset), packet_buffers.len - 1).bytes()
+				buffers << packet_buffers.substr(int(offset), packet_buffers.len - 1).bytes()//push to buffer
 			} else {
 				buffers << packet_buffers.substr(int(offset), int(offset + max_size)).bytes()
 			}
@@ -220,10 +220,10 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 			mut encapsulated_packet := EncapsulatedPacket{}
 			encapsulated_packet.split_id = u16(split_id)
 			encapsulated_packet.has_split = true
-			encapsulated_packet.split_count = buffer_count
+			encapsulated_packet.split_count = u32(buffer_count)
 			encapsulated_packet.reliability = p.reliability
-			encapsulated_packet.split_index = count
-			encapsulated_packet.buffer = buffer
+			encapsulated_packet.split_index = u32(count)//int
+			encapsulated_packet.buffer = byteptr(buffer)//[]byte
 			if reliability_is_reliable(p.reliability) {
 				encapsulated_packet.message_index = s.message_index
 				s.message_index++
@@ -307,11 +307,10 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 		p.sequence_index = packet.sequence_index
 		p.order_index = packet.order_index
 		p.order_channel = packet.order_channel
-		mut i := 0
-		for i < packet.split_count {
-			d := s.split_packets[packet.split_id.str()]
-			buffer << d.m[i.str()].buffer
-			i++
+		for i in 0 .. (packet.split_count-1) {
+			d := s.split_packets[packet.split_id.str()]//vraklib.TmpMapEncapsulatedPacket
+			buffer << d.m[i.str()].buffer//vraklib.EncapsulatedPacket.buffer
+			//i++
 		}
 		p.buffer = buffer.data
 		p.length = u16(buffer.len)
@@ -345,8 +344,7 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 		pp := s.handle_split(packet) or { return }
 		p = pp
 	}
-	if reliability_is_sequenced_or_ordered(packet.reliability) &&
-		(packet.order_channel < 0 || packet.order_channel >= channel_count) {
+	if reliability_is_sequenced_or_ordered(packet.reliability) && (packet.order_channel < 0 || packet.order_channel >= channel_count) {
 		// Invalid packet
 		return
 	}
@@ -356,12 +354,12 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 			// too old sequenced packet
 			return
 		}
-		s.receive_sequenced_highest_index[packet.order_channel] = packet.sequence_index + 1
+		s.receive_sequenced_highest_index[packet.order_channel] = int(packet.sequence_index + 1)
 		s.handle_encapsulated_packet_route(packet)
 	} else if reliability_is_ordered(packet.reliability) {
 		if packet.order_index == s.receive_ordered_index[packet.order_channel] {
 			s.receive_sequenced_highest_index[packet.order_index] = 0
-			s.receive_ordered_index[packet.order_channel] = packet.order_index + 1
+			s.receive_ordered_index[packet.order_channel] = int(packet.order_index + 1)
 			s.handle_encapsulated_packet_route(packet)
 			mut i := s.receive_ordered_index[packet.order_channel]
 			for {
