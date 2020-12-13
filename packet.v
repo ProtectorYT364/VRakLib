@@ -5,9 +5,7 @@ import net
 
 const (
     raknet_magic_length = 16
-)
 
-const (
     bitflag_valid = 0x80
     bitflag_ack = 0x40
     bitflag_nak = 0x20
@@ -94,13 +92,11 @@ pub mut:
     identifier_ack int
 }
 
-/*
-Datagram packets are used to implement a connectionless packet delivery service.
-Each message is routed from one machine to another based solely on information
-contained within that packet. Multiple packets sent from one machine to another
-might be routed differently, and might arrive in any order.
-Packet delivery is not guaranteed.
-*/
+// Datagram packets are used to implement a connectionless packet delivery service.
+// Each message is routed from one machine to another based solely on information
+// contained within that packet. Multiple packets sent from one machine to another
+// might be routed differently, and might arrive in any order.
+// Packet delivery is not guaranteed.
 struct Datagram {
 pub mut:
     p Packet
@@ -135,9 +131,9 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
             }
         }
         if internal_packet.has_split {
-            internal_packet.split_count == packet.buffer.get_int()
-            internal_packet.split_id == u16(packet.buffer.get_short())
-            internal_packet.split_index == packet.buffer.get_int()
+            internal_packet.split_count = packet.buffer.get_int()
+            internal_packet.split_id = u16(packet.buffer.get_short())
+            internal_packet.split_index = packet.buffer.get_int()
         }
         internal_packet.buffer = packet.buffer.get_bytes(&length).data
         packets << internal_packet
