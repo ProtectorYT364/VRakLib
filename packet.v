@@ -22,6 +22,37 @@ pub mut:
     address net.Addr
 }
 
+struct EncapsulatedPacket {
+pub mut:
+    buffer byteptr
+    length u16
+    reliability byte
+    has_split bool
+    message_index int
+    sequence_index int
+    order_index int
+    order_channel byte
+    split_count int
+    split_id u16
+    split_index int
+    need_ack bool
+    identifier_ack int
+}
+
+struct Datagram {
+// Datagram packets are used to implement a connectionless packet delivery service.
+// Each message is routed from one machine to another based solely on information
+// contained within that packet. Multiple packets sent from one machine to another
+// might be routed differently, and might arrive in any order.
+// Packet delivery is not guaranteed.
+pub mut:
+    p Packet
+
+    packet_id byte
+    sequence_number int = -1
+    packets []EncapsulatedPacket
+}
+
 fn new_packet_from_packet(packet Packet) Packet {
     return Packet {
         buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
@@ -73,37 +104,6 @@ fn (mut p Packet) get_address() net.Addr {
         panic('Only IPv4 is supported for now')
     }
     //TODO IPv6
-}
-
-struct EncapsulatedPacket {
-pub mut:
-    buffer byteptr
-    length u16
-    reliability byte
-    has_split bool
-    message_index int
-    sequence_index int
-    order_index int
-    order_channel byte
-    split_count int
-    split_id u16
-    split_index int
-    need_ack bool
-    identifier_ack int
-}
-
-// Datagram packets are used to implement a connectionless packet delivery service.
-// Each message is routed from one machine to another based solely on information
-// contained within that packet. Multiple packets sent from one machine to another
-// might be routed differently, and might arrive in any order.
-// Packet delivery is not guaranteed.
-struct Datagram {
-pub mut:
-    p Packet
-
-    packet_id byte
-    sequence_number int = -1
-    packets []EncapsulatedPacket
 }
 
 fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {
