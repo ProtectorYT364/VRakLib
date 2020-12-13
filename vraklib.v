@@ -15,21 +15,26 @@ pub mut:
 	shutdown             bool
 }
 
-pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulatedData, ch3 chan PutPacketData) {
+// pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulatedData, ch3 chan PutPacketData) {
+pub fn (mut r VRakLib) start(address net.Addr) {
+	println('RakNet thread starting')
+	println('Address: ' + address.str())
 	r.shutdown = false // address,
 	socket := create_socket(r.port) or { panic(err) }
-	r.address = socket.s.sock.address() or { panic(err) }
+	// r.address = socket.s.sock.address() or { panic(err) }
+	r.address = address
 	println(r.port)
 	println(r.address)
 	mut session_manager := new_session_manager(r, socket)
 	r.session_manager = session_manager
-	r.channel_sessions = ch1
-	r.channel_encapsulated = ch2
-	r.channel_packetdata = ch3
+	// r.channel_sessions = ch1
+	// r.channel_encapsulated = ch2
+	// r.channel_packetdata = ch3
 	go session_manager.run()
 }
 
 pub fn (mut r VRakLib) stop() {
+	println('RakNet thread stopping')
 	r.shutdown = true
 }
 

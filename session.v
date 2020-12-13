@@ -101,7 +101,7 @@ fn (mut s Session) update() {
 		// s.nack_queue = map[string]int{}
 	}
 	if s.need_ack.len > 0 {
-		for i, ack in s.need_ack {
+		for _, ack in s.need_ack {
 			if ack.m.len == 0 {
 				// s.need_ack[i]
 				// s.session_manager.notify_ack(s, i)
