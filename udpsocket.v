@@ -19,7 +19,8 @@ pub fn create_socket(port int) ?UdpSocket {
 	// zero := 0
 	// s.setsockopt(C.SOL_SOCKET, C.SO_REUSEADDR, &zero)
 	// s.bind( port ) or { panic(err) }
-	mut conn := net.listen_udp(port) or { panic(err) }
+	//mut conn := net.listen_udp(port) or { panic(err) }
+	mut conn := net.listen_udp(port)?
 	return UdpSocket{conn}
 }
 

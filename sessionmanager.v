@@ -5,7 +5,7 @@ import time
 
 struct SessionManager {
 mut:
-	server             VRakLib
+	server             &VRakLib
 	socket             UdpSocket
 	sessions           map[string]Session
 	session_by_address map[string]Session
@@ -15,7 +15,7 @@ mut:
 	next_session_id    int
 }
 
-fn new_session_manager(r VRakLib, socket UdpSocket) &SessionManager {
+pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
 	sm := &SessionManager{
 		server: r
 		socket: socket

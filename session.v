@@ -38,17 +38,22 @@ mut:
 	session_manager                 SessionManager
 	// logger logger
 	address                         net.Addr
-	state                           State // connecting
+	state                           State
+	// connecting
 	mtu_size                        u16
 	id                              u64
-	split_id                        int // 0
-	send_seq_number                 u32 // 0
+	split_id                        int
+	// 0
+	send_seq_number                 u32
+	// 0
 	last_update                     f32
 	disconnection_time              f32
-	is_temporal                     bool // true
+	is_temporal                     bool
+	// true
 	// packet_to_send
 	packet_to_send                  []Datagram
-	is_active                       bool // false
+	is_active                       bool
+	// false
 	ack_queue                       map[string]u32
 	nack_queue                      map[string]u32
 	// maybe map[int]Datagram, key is seqNumber
@@ -62,8 +67,10 @@ mut:
 	reliable_window_start           int
 	reliable_window_end             int
 	reliable_window                 map[string]bool
-	last_ping_time                  f32 // -1
-	last_ping_measure               int // 1
+	last_ping_time                  f32
+	// -1
+	last_ping_measure               int
+	// 1
 	internal_id                     int
 }
 
@@ -87,8 +94,8 @@ fn new_session(session_manager SessionManager, address net.Addr, client_id u64, 
 
 fn (mut s Session) update() {
 	diff := s.highest_seq_number - s.window_start + u32(1)
-	assert diff >= u32(0)
-	if diff > u32(0) {
+	assert diff > u32(0)
+	if diff > u32(0) {// warning: comparison of unsigned expression >= 0 is always true [-Wtype-limits]
 		s.window_start += diff
 		s.window_end += diff
 	}
@@ -196,7 +203,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 	max_size := u16(s.mtu_size) - u16(60)
 	if p.length > max_size {
 		mut buffers := []byte{}
-		packet_buffers := tos(p.buffer, int(p.length))
+		packet_buffers := tos(p.buffer, int(p.length))//string
 		mut buffer_count := 0
 		mut offset := u16(0)
 		for offset < p.length {
@@ -381,7 +388,8 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 }
 
 fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
-	pid := packet.buffer[0]
+	unsafe {
+		pid := packet.buffer[0]
 	println('Encapsulated, $pid')
 	if pid < id_user_packet_enum {
 		if s.state == .connecting {
@@ -418,5 +426,6 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 		s.session_manager.handle_encapsulated(s, packet)
 	} else {
 		// Received packet before connection
+	}
 	}
 }
