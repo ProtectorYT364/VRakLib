@@ -21,7 +21,7 @@ pub mut:
 
 struct EncapsulatedPacket {
 pub mut:
-	buffer         byteptr
+	buffer         []byte
 	length         u16
 	reliability    byte
 	has_split      bool
@@ -49,14 +49,14 @@ pub mut:
 	packets         []EncapsulatedPacket
 }
 
-fn new_packet_from_packet(packet Packet) Packet {
+fn new_packet_from_packet(packet Packet) Packet {//TODO wtf can't i clone it instead or sth? smh
 	return Packet{
 		buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
 		address: packet.address
 	}
 }
 
-fn new_packet(buffer byteptr, length u32) Packet {
+fn new_packet(buffer []byte, length u32) Packet {
 	return Packet{
 		buffer: new_bytebuffer(buffer, length)
 	}
@@ -138,7 +138,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
 			internal_packet.split_id = u16(packet.buffer.get_short())//TODO check if this needs to be ushort
 			internal_packet.split_index = u32(packet.buffer.get_int())//TODO check if this needs to be uint
 		}
-		internal_packet.buffer = packet.buffer.get_bytes(&length).data
+		internal_packet.buffer = packet.buffer.get_bytes(&length)
 		packets << internal_packet
 		// println('length: ${internal_packet.length}')
 		// println('reliability: ${internal_packet.reliability}')
@@ -156,7 +156,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
 
 fn (p EncapsulatedPacket) to_binary() Packet {//AKA write
 	mut packet := Packet{
-		buffer: new_bytebuffer([byte(0)].repeat(int(p.get_length())).data, p.get_length())
+		buffer: new_bytebuffer([byte(0)].repeat(int(p.get_length())), p.get_length())
 	}
 	packet.buffer.put_byte(byte(p.reliability << 5 | (if p.has_split {
 		0x01
@@ -185,21 +185,9 @@ fn (p EncapsulatedPacket) to_binary() Packet {//AKA write
 }
 
 fn (e EncapsulatedPacket) get_length() u32 {
-	return u32(u16(3) + e.length + u16(if e.message_index != -1 {
-		3
-	} else {
-		0
-	}) +
-		u16(if e.order_index != -1 {
-		4
-	} else {
-		0
-	}) +
-		u16(if e.has_split {
-		10
-	} else {
-		0
-	}))
+    return u32(u16(3) + e.length + u16(if int(e.message_index) != -1 { 3 } else { 0 })
+     + u16(if int(e.order_index) != -1 { 4 } else { 0 })
+     + u16(if e.has_split { 10 } else { 0 }))
 }
 
 fn (c Datagram) get_total_length() u32 {
@@ -218,7 +206,7 @@ fn (mut c Datagram) decode() {
 
 fn (mut c Datagram) encode() {
 	c.p.buffer.length = c.get_total_length()
-	c.p.buffer.buffer = [byte(0)].repeat(int(c.get_total_length())).data
+	c.p.buffer.buffer = [byte(0)].repeat(int(c.get_total_length()))
 	c.p.buffer.put_byte(byte(bitflag_valid) | c.packet_id)
 	c.p.buffer.put_ltriad(c.sequence_number)
 	for internal_packet in c.packets {

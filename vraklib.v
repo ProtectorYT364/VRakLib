@@ -34,13 +34,13 @@ pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulat
 
 	mut session_manager := new_session_manager(r, socket)
 	r.session_manager = session_manager
-	go session_manager.run()
+	//go session_manager.run()
 }
 
-pub fn (mut r VRakLib) stop() {
-	println('RakNet thread stopping')
-	r.shutdown = true
-}
+// pub fn (mut r VRakLib) stop() {
+// 	println('RakNet thread stopping')
+// 	r.shutdown = true
+// }
 
 fn (r VRakLib) close_session() {
 }

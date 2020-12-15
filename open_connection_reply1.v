@@ -12,7 +12,7 @@ mut:
 
 fn (mut r OpenConnectionReply1) encode() {
 	r.p.buffer.put_byte(id_open_connection_reply1)
-	r.p.buffer.put_bytes(get_packet_magic().data, raknet_magic_length) // TODO check method
+	r.p.buffer.put_bytes(get_packet_magic(), raknet_magic_length) // TODO check method
 	r.p.buffer.put_ulong(r.server_guid)
 	r.p.buffer.put_bool(r.secure)
 	r.p.buffer.put_ushort(r.mtu_size) // todo u16 or i16?

@@ -120,7 +120,7 @@ fn (mut s Session) update() {
 
 fn (mut s Session) send_datagram(datagram Datagram) {
 	mut d := datagram
-	if datagram.sequence_number != -1 {
+	if datagram.sequence_number != u32(-1) {
 		s.recovery_queue.delete(datagram.sequence_number.str())
 	}
 	d.sequence_number = s.send_seq_number
@@ -166,7 +166,7 @@ fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order
 fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 	mut p := packet
 	priority := flags & 0x07
-	if p.need_ack && p.message_index != -1 {
+	if p.need_ack && p.message_index != u32(-1) {
 		mut arr := s.need_ack[p.identifier_ack.str()]
 		arr.m[p.message_index.str()] = int(p.message_index)
 	}
@@ -203,7 +203,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 	max_size := u16(s.mtu_size) - u16(60)
 	if p.length > max_size {
 		mut buffers := []byte{}
-		packet_buffers := tos(p.buffer, int(p.length))//string
+		packet_buffers := p.buffer.str()//string TODO use bytes directly
 		mut buffer_count := 0
 		mut offset := u16(0)
 		for offset < p.length {
@@ -223,7 +223,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 			encapsulated_packet.split_count = u32(buffer_count)
 			encapsulated_packet.reliability = p.reliability
 			encapsulated_packet.split_index = u32(count)//int
-			encapsulated_packet.buffer = byteptr(buffer)//[]byte
+			encapsulated_packet.buffer << buffer//byte
 			if reliability_is_reliable(p.reliability) {
 				encapsulated_packet.message_index = s.message_index
 				s.message_index++
@@ -285,7 +285,7 @@ fn (mut s Session) handle_packet(packet Datagram) {
 
 fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 	if packet.split_count >= max_split_size ||
-		packet.split_index >= max_split_size || packet.split_index < 0 {
+		packet.split_index >= max_split_size {
 		return error('Invalid split packet part')
 	}
 	if !(packet.split_id.str() in s.split_packets) {
@@ -307,12 +307,12 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 		p.sequence_index = packet.sequence_index
 		p.order_index = packet.order_index
 		p.order_channel = packet.order_channel
-		for i in 0 .. (packet.split_count-1) {
+		for i in 0 .. (int(packet.split_count)-1) {
 			d := s.split_packets[packet.split_id.str()]//vraklib.TmpMapEncapsulatedPacket
-			buffer << d.m[i.str()].buffer//vraklib.EncapsulatedPacket.buffer
+			buffer << d.m[i.str()].buffer//vraklib.EncapsulatedPacket.buffer//warning: initialization of 'unsigned char' from 'byteptr' {aka 'unsigned char *'} makes integer from pointer without a cast; note: (near initialization for '(anonymous)[0]')
 			//i++
 		}
-		p.buffer = buffer.data
+		p.buffer = buffer
 		p.length = u16(buffer.len)
 		s.split_packets.delete(packet.split_id.str())
 		return p
@@ -322,7 +322,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 
 fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 	mut p := packet
-	if p.message_index != -1 {
+	if p.message_index != u32(-1) {
 		if p.message_index < s.reliable_window_start ||
 			p.message_index > s.reliable_window_end || p.message_index.str() in s.reliable_window {
 			return
@@ -397,7 +397,7 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				}
 				connection.decode()
 				mut accepted := ConnectionRequestAccepted{
-					p: new_packet([byte(0)].repeat(96).data, u32(96))
+					p: new_packet([byte(0)].repeat(96), u32(96))
 					request_timestamp: connection.request_timestamp
 					accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
 				}

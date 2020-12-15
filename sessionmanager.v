@@ -75,7 +75,7 @@ fn (mut s SessionManager) receive_packet() {
 			title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;123456789;boundstone;Creative;'
 			len := 35 + title.len
 			mut pong := UnConnectedPong{
-				p: new_packet([byte(0)].repeat(len).data, u32(len))
+				p: new_packet([byte(0)].repeat(len), u32(len))
 				server_guid: 123456789
 				send_timestamp: ping.send_timestamp
 				data: title.bytes()
@@ -92,7 +92,7 @@ fn (mut s SessionManager) receive_packet() {
 			request.decode()
 			if request.protocol != 9 {
 				mut incompatible := IncompatibleProtocolVersion{
-					p: new_packet([byte(0)].repeat(26).data, u32(26))
+					p: new_packet([byte(0)].repeat(26), u32(26))
 					protocol: 10
 					server_guid: 123456789
 				}
@@ -103,7 +103,7 @@ fn (mut s SessionManager) receive_packet() {
 				return
 			}
 			mut reply := OpenConnectionReply1{
-				p: new_packet([byte(0)].repeat(28).data, u32(28))
+				p: new_packet([byte(0)].repeat(28), u32(28))
 				secure: false
 				server_guid: 123456789
 				mtu_size: request.mtu_size + u16(28)
@@ -122,7 +122,7 @@ fn (mut s SessionManager) receive_packet() {
 				return
 			}
 			mut reply := OpenConnectionReply2{
-				p: new_packet([byte(0)].repeat(35).data, u32(35))
+				p: new_packet([byte(0)].repeat(35), u32(35))
 				server_guid: 123456789
 				client_address: request.p.address
 				mtu_size: request.mtu_size
@@ -145,7 +145,7 @@ fn (s SessionManager) session_exists(address net.Addr) bool {
 	return address.str() in s.session_by_address
 }
 
-fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_size u16) &Session {
+fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_size u16) Session {
 	for {
 		if s.next_session_id.str() in s.sessions {
 			s.next_session_id++
@@ -157,7 +157,7 @@ fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_si
 	session := new_session(s, address, client_id, mtu_size, s.next_session_id)
 	s.sessions[s.next_session_id.str()] = session
 	s.session_by_address[address.str()] = session
-	return &session
+	return s.sessions[s.next_session_id.str()]
 }
 
 fn (s SessionManager) send_packet(p Packet) {

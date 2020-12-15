@@ -14,9 +14,9 @@ fn (mut r UnConnectedPong) encode() {
 	r.p.buffer.put_byte(id_unconnected_pong)
 	r.p.buffer.put_ulong(r.send_timestamp)
 	r.p.buffer.put_ulong(r.server_guid)
-	r.p.buffer.put_bytes(get_packet_magic().data, raknet_magic_length)
+	r.p.buffer.put_bytes(get_packet_magic(), raknet_magic_length)
 	r.p.buffer.put_ushort(u16(r.data.len))
-	r.p.buffer.put_bytes(&r.data, r.data.len)
+	r.p.buffer.put_bytes(r.data, r.data.len)
 }
 
 fn (mut r UnConnectedPong) decode() {

@@ -12,7 +12,7 @@ mut:
 fn (mut r UnConnectedPing) encode() {
 	r.p.buffer.put_byte(id_unconnected_ping)
 	r.p.buffer.put_ulong(r.send_timestamp)
-	r.p.buffer.put_bytes(get_packet_magic().data, raknet_magic_length) // TODO check method
+	r.p.buffer.put_bytes(get_packet_magic(), raknet_magic_length) // TODO check method
 	r.p.buffer.put_ulong(r.client_guid)
 }
 

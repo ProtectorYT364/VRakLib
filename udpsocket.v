@@ -29,12 +29,11 @@ fn (s UdpSocket) receive() ?Packet {
 	mut c := s.s
 	mut buf := []byte{len: bufsize, init: 0}
 	read, addr := c.read(mut buf) or { return none }
-	mut test := buf.str()
 	// println('Got address $addr')
 	// println('Got $read bytes')
 	// println('Got ${buf.data} bytes')
 	return Packet{
-		buffer: new_bytebuffer(&test, u32(read))
+		buffer: new_bytebuffer(buf, u32(read))
 		address: addr
 	}
 }

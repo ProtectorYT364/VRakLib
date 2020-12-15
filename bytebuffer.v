@@ -10,12 +10,12 @@ enum Endianness {
 struct ByteBuffer {
 pub mut:
 	endianness Endianness
-	buffer     byteptr
+	buffer     []byte
 	length     u32
 	position   u32
 }
 
-pub fn new_bytebuffer(buffer byteptr, size u32) &ByteBuffer {
+pub fn new_bytebuffer(buffer []byte, size u32) &ByteBuffer {
 	return &ByteBuffer{
 		// endianness: Endianness.little // Network order
 		endianness: Endianness.big // Network order
@@ -37,15 +37,13 @@ pub fn (mut b ByteBuffer) put_byte(v byte) {
 	b.position++
 }
 
-pub fn (mut b ByteBuffer) put_bytes(bytes byteptr, size int) {
+pub fn (mut b ByteBuffer) put_bytes(bytes []byte, size int) {
 	assert b.position + u32(size) <= b.length
 	if size > 0 {
-		mut i := 0
-		for i < size {
+		for i in 0..size {
 			unsafe {
 				b.buffer[b.position + u32(i)] = bytes[i]
 			}
-			i++
 		}
 		b.position += u32(size)
 	}
@@ -401,7 +399,7 @@ pub fn (mut b ByteBuffer) get_string() string {
 			i++
 		}
 	}
-	return tos(v.data, size)
+	return tos(v.data, size)//TODO can maybe remove this
 }
 
 pub fn (b ByteBuffer) get_system_endianness() Endianness {
