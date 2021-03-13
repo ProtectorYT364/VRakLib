@@ -15,7 +15,9 @@ fn (mut r ConnectionRequestAccepted) encode(mut b ByteBuffer) {
 	b.put_byte(id_connection_request_accepted)
 	b.put_address(r.client_address)
 	b.put_short(i16(0))
+	println(r.system_addresses)
 	for _, addr in r.system_addresses {
+	println(addr)
 		b.put_address(addr)
 	}
 	b.put_ulong(r.request_timestamp)
@@ -23,11 +25,13 @@ fn (mut r ConnectionRequestAccepted) encode(mut b ByteBuffer) {
 }
 
 fn (mut r ConnectionRequestAccepted) decode(mut b ByteBuffer) {
-	r.client_address = b.get_address() // _ =
+	r.client_address = b.get_address()
+	println(r.client_address)
 	b.get_bytes(2)
 	for i := 0; i < 20; i++ {
 		r.system_addresses[i] = b.get_address()
-		if b.len() == 16 {
+	println(r.system_addresses[i])
+		if b.length == 16 {
 			break
 		}
 	}

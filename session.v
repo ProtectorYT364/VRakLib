@@ -394,18 +394,19 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 }
 
 fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
+	mut buf := new_bytebuffer(packet.buffer)
 	unsafe {
-		pid := packet.buffer[0]
+		pid := buf.get_byte()
 	println('Encapsulated, $pid')
 	if pid < id_user_packet_enum {
 		if s.state == .connecting {
 			if pid == id_connection_request {
 				mut connection := ConnectionRequest{
-					p: new_packet(packet.buffer, s.address)
+					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				connection.decode(mut connection.p.buffer)
+				connection.decode(mut buf)
 				mut accepted := ConnectionRequestAccepted{
-					p: new_packet([]byte{len:96}, s.address)
+					p: new_packet([]byte{len:int(s.mtu_size)}, s.address)
 					request_timestamp: connection.request_timestamp
 					accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
 				}
@@ -414,10 +415,10 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
 			} else if pid == id_new_incoming_connection {
 				mut connection := NewIncomingConnection{
-					p: new_packet(packet.buffer, s.address)
+					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				connection.decode(mut connection.p.buffer)
-				if connection.server_address.port == 19132 || !s.session_manager.port_checking {
+				connection.decode(mut buf)
+				if connection.server_address.port == s.session_manager.socket.a.port || !s.session_manager.port_checking {
 					s.state = .connected
 					s.is_temporal = false
 					s.session_manager.open_session(s)
