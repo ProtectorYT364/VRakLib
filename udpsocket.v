@@ -54,8 +54,9 @@ fn (s UdpSocket) send(p Packet) ?int {
 	println('UdpSocket send')
 	println(p.address)
 	p.buffer.print()
+	return 0//TODO
 }
 
-fn (s UdpSocket) close() {
+fn (mut s UdpSocket) close() {
 	s.s.close()
 }

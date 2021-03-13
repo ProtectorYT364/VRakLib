@@ -71,7 +71,7 @@ fn (mut s SessionManager) receive_packet() {
 			mut ping := UnConnectedPing{
 				p: new_packet_from_packet(packet)
 			}
-			ping.decode()
+			ping.decode(packet.buffer)
 			title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;123456789;boundstone;Creative;'
 			len := 35 + title.len
 			mut pong := UnConnectedPong{
