@@ -129,6 +129,7 @@ fn (mut s Session) send_datagram(datagram Datagram) {
 	s.send_seq_number++
 	s.recovery_queue[d.sequence_number.str()] = datagram
 	// d,
+	println(d)
 	s.send_packet(d.p)
 }
 
