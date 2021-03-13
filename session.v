@@ -93,6 +93,7 @@ fn new_session(session_manager SessionManager, address net.Addr, client_id u64, 
 }
 
 fn (mut s Session) update() {
+	println("SESSION UPDATE")
 	diff := s.highest_seq_number - s.window_start + u32(1)
 	assert diff > u32(0)
 	if diff > u32(0) {// warning: comparison of unsigned expression >= 0 is always true [-Wtype-limits]
@@ -119,6 +120,7 @@ fn (mut s Session) update() {
 }
 
 fn (mut s Session) send_datagram(datagram Datagram) {
+	println("SESSION SEND DATAGRAM")
 	mut d := datagram
 	if datagram.sequence_number != u32(-1) {
 		s.recovery_queue.delete(datagram.sequence_number.str())
@@ -131,6 +133,7 @@ fn (mut s Session) send_datagram(datagram Datagram) {
 }
 
 fn (s Session) send_packet(p Packet) {
+	println("SESSION SEND PACKET")
 	mut pp := p
 	pp.address = s.address
 	// r,
@@ -164,6 +167,7 @@ fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order
 }
 
 fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
+	println("ADD TO QUEUE")
 	mut p := packet
 	priority := flags & 0x07
 	if p.need_ack && p.message_index != u32(-1) {
@@ -186,6 +190,7 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 }
 
 fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags byte) {
+	println("ADD ENCAPSULATED TO QUEUE")
 	mut p := packet
 	p.need_ack = (flags & 0x09) != 0
 	println(p.need_ack)
@@ -243,6 +248,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 }
 
 fn (mut s Session) handle_packet(packet Datagram) {
+	println("HANDLE DATAGRAM PACKET")
 	mut p := packet
 	p.decode()
 	if u32(p.sequence_number) < s.window_start ||
@@ -284,6 +290,7 @@ fn (mut s Session) handle_packet(packet Datagram) {
 }
 
 fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
+	println("HANDLE SPLIT")
 	if packet.split_count >= max_split_size ||
 		packet.split_index >= max_split_size {
 		return error('Invalid split packet part')
@@ -321,6 +328,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 }
 
 fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
+	println("HANDLE ENCAPSULATED")
 	mut p := packet
 	if p.message_index != u32(-1) {
 		if p.message_index < s.reliable_window_start ||
@@ -393,22 +401,22 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 		if s.state == .connecting {
 			if pid == id_connection_request {
 				mut connection := ConnectionRequest{
-					p: new_packet(packet.buffer, u32(packet.length))
+					p: new_packet(packet.buffer, s.address)
 				}
-				connection.decode()
+				connection.decode(mut connection.p.buffer)
 				mut accepted := ConnectionRequestAccepted{
-					p: new_packet([byte(0)].repeat(96), u32(96))
+					p: new_packet([]byte{len:96}, s.address)
 					request_timestamp: connection.request_timestamp
 					accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
 				}
-				accepted.encode()
+				accepted.encode(mut accepted.p.buffer)
 				accepted.p.address = connection.p.address
 				s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
 			} else if pid == id_new_incoming_connection {
 				mut connection := NewIncomingConnection{
-					p: new_packet(packet.buffer, u32(packet.length))
+					p: new_packet(packet.buffer, s.address)
 				}
-				connection.decode()
+				connection.decode(mut connection.p.buffer)
 				if connection.server_address.port == 19132 || !s.session_manager.port_checking {
 					s.state = .connected
 					s.is_temporal = false

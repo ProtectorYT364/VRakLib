@@ -12,17 +12,17 @@ mut:
 	client_guid    u64
 }
 
-fn (mut r OpenConnectionRequest2) encode() {
-	r.p.buffer.put_byte(id_open_connection_request2)
-	r.p.buffer.put_bytes(get_packet_magic(), raknet_magic_length) // TODO check method
+fn (mut r OpenConnectionRequest2) encode(mut b ByteBuffer) {
+	b.put_byte(id_open_connection_request2)
+	b.put_bytes(get_packet_magic(), raknet_magic_length) // TODO check method
 	r.p.put_address(r.server_address)
-	r.p.buffer.put_ushort(r.mtu_size) // todo u16 or i16?
-	r.p.buffer.put_ulong(r.client_guid)
+	b.put_ushort(r.mtu_size) // todo u16 or i16?
+	b.put_ulong(r.client_guid)
 }
 
-fn (mut r OpenConnectionRequest2) decode() {
-	r.magic = r.p.buffer.get_bytes(raknet_magic_length)
+fn (mut r OpenConnectionRequest2) decode(mut b ByteBuffer) {
+	r.magic = b.get_bytes(raknet_magic_length)
 	r.server_address = r.p.get_address()
-	r.mtu_size = r.p.buffer.get_ushort() // todo u16 or i16?
-	r.client_guid = r.p.buffer.get_ulong()
+	r.mtu_size = b.get_ushort() // todo u16 or i16?
+	r.client_guid = b.get_ulong()
 }

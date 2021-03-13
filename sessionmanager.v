@@ -16,7 +16,7 @@ mut:
 }
 
 const(
-	server_guid = 123456789
+	server_guid = 1234567890123456
 )
 
 pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
@@ -35,16 +35,17 @@ fn (s SessionManager) get_raknet_time_ms() i64 {
 pub fn (mut s SessionManager) run() {
 	for !s.shutdown {
 		s.receive_packet()
-		for i, _ in s.sessions {
-			s.sessions[i].update()//todo maybe only update current session?
-		}
+		//for i, _ in s.sessions {
+		//	s.sessions[i].update()//todo maybe only update current session?
+		//}
 	}
 }
 
 fn (mut s SessionManager) receive_packet() {
 	mut packet := s.socket.receive() or { return }
-	println('received $packet!')
 	pid := packet.buffer.get_byte()
+	println('received $pid $packet!')
+	packet.buffer.rewind()
 	if s.session_exists(packet.address) {
 		println('Session exists: $packet.address')
 		mut session := s.get_session_by_address(packet.address)
@@ -70,14 +71,14 @@ fn (mut s SessionManager) receive_packet() {
 		println('Session not found: $packet.address $pid')
 		if pid == id_unconnected_ping {
 			mut ping := UnConnectedPing{
-				//p: new_packet_from_packet(packet)
+				p: new_packet_from_packet(packet)
 			}
 			ping.decode(mut packet.buffer)
 			title := 'MCPE;Minecraft V Server!;419;1.16.200;0;100;$server_guid;boundstone;Creative;'
 			len := 35 + title.len
 			mut buf := []byte{len: len}
 			mut pong := UnConnectedPong{
-				p: new_packet(buf, u32(len))//TODO remove
+				p: new_packet(buf, packet.address)//TODO remove
 				server_guid: server_guid
 				send_timestamp: ping.send_timestamp
 				//send_timestamp: timestamp()
@@ -91,28 +92,30 @@ fn (mut s SessionManager) receive_packet() {
 			mut request := OpenConnectionRequest1{
 				p: new_packet_from_packet(packet)
 			}
-			request.decode()
+			request.decode(mut packet.buffer)
+			println(request)
 			if request.protocol != 9 {
 				mut incompatible := IncompatibleProtocolVersion{
-					p: new_packet([]byte{len:26}, u32(26))
+					p: new_packet([]byte{len:26}, packet.address)
 					protocol: 10
 					server_guid: server_guid
 				}
 				//packet.buffer.reset()
-				incompatible.encode()
+				incompatible.encode(mut incompatible.p.buffer)
 				incompatible.p.address = request.p.address
 				// incompatible,
 				s.socket.send(incompatible.p) or { panic(err) }
 				return
 			}
 			mut reply := OpenConnectionReply1{
-				p: new_packet([]byte{len:28}, u32(28))
+				p: new_packet([]byte{len:28}, packet.address)
 				secure: false
 				server_guid: server_guid
 				mtu_size: request.mtu_size + u16(28)
 			}
 			//packet.buffer.reset()
-			reply.encode()
+			reply.encode(mut reply.p.buffer)
+			println(reply)
 			reply.p.address = request.p.address
 			// reply,
 			s.socket.send(reply.p) or { panic(err) }
@@ -120,20 +123,21 @@ fn (mut s SessionManager) receive_packet() {
 			mut request := OpenConnectionRequest2{
 				p: new_packet_from_packet(packet)
 			}
-			request.decode()
+			request.decode(mut packet.buffer)
+			println(request)
 			if request.mtu_size < u16(min_mtu_size) {
 				println('Not creating session for $packet.address due to bad MTU size $request.mtu_size')
 				return
 			}
 			mut reply := OpenConnectionReply2{
-				p: new_packet([]byte{len:35}, u32(35))
+				p: new_packet([]byte{len:35}, packet.address)
 				server_guid: server_guid
 				client_address: request.p.address
 				mtu_size: request.mtu_size
 				secure: false
 			}
 			//packet.buffer.reset()
-			reply.encode()
+			reply.encode(mut reply.p.buffer)
 			reply.p.address = request.p.address
 			// reply,
 			s.socket.send(reply.p) or { panic(err) }

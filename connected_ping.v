@@ -6,11 +6,11 @@ mut:
 	client_timestamp u64
 }
 
-fn (mut r ConnectedPing) encode() {
-	r.p.buffer.put_byte(id_connected_ping)
-	r.p.buffer.put_ulong(r.client_timestamp)
+pub fn (mut r ConnectedPing) encode(mut b ByteBuffer) {
+	b.put_byte(id_connected_ping)
+	b.put_ulong(r.client_timestamp)
 }
 
-fn (mut r ConnectedPing) decode() {
-	r.client_timestamp = r.p.buffer.get_ulong()
+pub fn (mut r ConnectedPing) decode(mut b ByteBuffer) {
+	r.client_timestamp = b.get_ulong()
 }

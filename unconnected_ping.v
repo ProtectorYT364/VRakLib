@@ -21,5 +21,4 @@ pub fn (mut r UnConnectedPing) decode(mut b ByteBuffer) {
 	r.send_timestamp = b.get_ulong()
 	r.magic = b.get_bytes(raknet_magic_length)
 	r.client_guid = b.get_ulong()
-	println(r)
 }

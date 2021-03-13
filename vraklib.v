@@ -50,11 +50,13 @@ fn (mut r VRakLib) open_session(identifier string, address net.Addr, client_id u
 }
 
 fn (r VRakLib) handle_encapsulated(identifier string, packet EncapsulatedPacket, flags int) {
+	println("VRAKLIB HANDLE ENCAPSULATED")
 	// p := BatchPacket {}
 	// player.handle_data_packet(p)
 }
 
 fn (r VRakLib) put_packet(identifier string, packet Packet, need_ack bool, immediate bool) {
+	println("VRAKLIB PUT PACKET")
 }
 
 fn (r VRakLib) update_ping() {

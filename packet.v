@@ -49,24 +49,26 @@ pub mut:
 	packets         []EncapsulatedPacket
 }
 
-fn new_packet_from_packet(packet Packet) Packet {//TODO wtf can't i clone it instead or sth? smh
-	println(packet.buffer.buffer[0])
-	return packet
+fn new_packet_from_packet(packet Packet) Packet {
+	return new_packet(packet.buffer.buffer, packet.address)
+	//  return Packet{
+	//  	buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
+	//  	address: packet.address
+	//  }
+}
+
+pub fn new_packet(buffer []byte, addr net.Addr) Packet {
+	buf := new_bytebuffer(buffer)
+	return new_packet_from_bytebuffer(buf, addr)
 	// return Packet{
-	// 	buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
-	// 	address: packet.address
+	// 	buffer: new_bytebuffer(buffer, length)
 	// }
 }
 
-pub fn new_packet(buffer []byte, length u32) Packet {
-	return Packet{
-		buffer: new_bytebuffer(buffer, length)
-	}
-}
-
-fn new_packet_from_bytebuffer(buffer ByteBuffer) Packet {
+fn new_packet_from_bytebuffer(buffer ByteBuffer, addr net.Addr) Packet {
 	return Packet{
 		buffer: buffer
+	 	address: addr
 	}
 }
 
@@ -158,7 +160,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
 
 fn (p EncapsulatedPacket) to_binary() Packet {//AKA write
 	mut packet := Packet{
-		buffer: new_bytebuffer([byte(0)].repeat(int(p.get_length())), p.get_length())
+		buffer: new_bytebuffer([]byte{len:int(p.get_length())})
 	}
 	packet.buffer.put_byte(byte(p.reliability << 5 | (if p.has_split {
 		0x01

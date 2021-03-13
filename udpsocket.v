@@ -14,7 +14,7 @@ mut:
 
 pub fn create_socket(addr net.Addr) ?UdpSocket {
 	conn := net.listen_udp(addr.port) or { panic(err) }//binds to local address
-	println('listening on $addr')
+	println('UDP Socket listening on $addr')
 	return UdpSocket{conn,addr}
 }
 
@@ -25,20 +25,20 @@ fn (s UdpSocket) receive() ?Packet {
 	bytes_read, client_addr := c.read(mut buf) or { return none }//addr is from recvfrom, client address
 	//trim buffer
 	buf = buf[..bytes_read]
-	 println('Got address $client_addr')
-		println('Got $bytes_read vs $buf.len bytes: "$buf.bytestr()"')
+	 //println('Got address $client_addr')
+		//println('Got $bytes_read vs $buf.len bytes: "$buf.bytestr()"')
 	return Packet{
-		buffer: new_bytebuffer(buf, u32(bytes_read))
+		buffer: new_bytebuffer(buf)
 		address: client_addr
 	}
 }
 
 fn (s UdpSocket) send(p Packet) ?int {
-		println('Writing to address $p.address: $p.buffer.buffer')
+		//println('Writing to address $p.address: $p.buffer.buffer')
 		mut sock := s.s
 		mut error := sock.write_to(p.address, p.buffer.buffer) or { panic(err) }//sends thedata to the client C.sendto, returns int on error, none otherwise
 		if error == p.buffer.length{
-		println('Success')
+		//println('Success')
 		return error
 		}else{
 		println('Failed')

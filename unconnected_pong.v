@@ -25,15 +25,8 @@ pub fn (mut r UnConnectedPong) decode(mut b ByteBuffer) {
 	r.send_timestamp = b.get_ulong()
 	r.server_guid = b.get_ulong()
 	r.magic = b.get_bytes(raknet_magic_length)
-	println('Magic seems fine: $r.magic')
-	println('Pos: $b.position')
-	//l := u16(b.get_ushort()) // todo u16 or i16?
 	mut l := i16(b.get_short()) // todo u16 or i16?
-	println('Bytes: $l')
-	println('Pos: $b.position')
 	// data := []byte{ len: len }
 	l = i16(b.length - b.position) // todo u16 or i16?
-	println('leftover Bytes: $l')
-	println('leftover buffer: $b.buffer')
 	r.data = b.get_bytes(l)
 }

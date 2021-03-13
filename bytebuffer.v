@@ -15,12 +15,12 @@ pub mut:
 	position   u32
 }
 
-pub fn new_bytebuffer(buffer []byte, size u32) &ByteBuffer {
+pub fn new_bytebuffer(buffer []byte) &ByteBuffer {
 	return &ByteBuffer{
 		// endianness: Endianness.little // Network order
 		endianness: Endianness.big // Network order
 		buffer: buffer
-		length: size
+		length: u32(buffer.len)
 		position: u32(0)
 	}
 }
@@ -243,8 +243,6 @@ pub fn (mut b ByteBuffer) put_string(v string) {
 }
 
 pub fn (mut b ByteBuffer) get_bytes(size int) []byte {
-	println(b.position)
-	println(size)
 	assert b.position + u32(size) <= b.length
 	if size == 0 {
 		// return []byte
