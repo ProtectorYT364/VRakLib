@@ -27,8 +27,6 @@ pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulat
 	println('Address: ' + r.address.str())
 	r.shutdown = false // address,
 	socket := create_socket(r.address) or { panic(err) }
-	// r.address = socket.s.sock.address() or { panic(err) }
-	//r.address = address
 	 r.channel_sessions = ch1
 	 r.channel_encapsulated = ch2
 	 r.channel_packetdata = ch3

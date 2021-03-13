@@ -13,58 +13,36 @@ mut:
 }
 
 pub fn create_socket(addr net.Addr) ?UdpSocket {
-	// s := net.socket_udp() or { panic(err) }
-	// // level, optname, optvalue
-	// bufsize := default_buffer_size
-	// s.setsockopt(C.SOL_SOCKET, C.SO_RCVBUF, &bufsize)
-	// zero := 0
-	// s.setsockopt(C.SOL_SOCKET, C.SO_REUSEADDR, &zero)
-	// s.bind( port ) or { panic(err) }
-	mut conn := net.listen_udp(addr.port) or { panic(err) }
-	//mut conn := net.listen_udp(port)?
-	println('listening $conn')
+	conn := net.listen_udp(addr.port) or { panic(err) }//binds to local address
+	println('listening on $addr')
 	return UdpSocket{conn,addr}
 }
 
 fn (s UdpSocket) receive() ?Packet {
 	bufsize := default_buffer_size
-	mut c := s.s
-	mut buf := []byte{len: bufsize/*, init: 0*/}
-	read, addr := c.read(mut buf) or { return none }
+	mut c := s.s//udpconn
+	mut buf := []byte{len: bufsize}
+	bytes_read, client_addr := c.read(mut buf) or { return none }//addr is from recvfrom, client address
 	//trim buffer
-	buf = buf[..read]
-	 println('Got address $addr')
-	 println('Got $read bytes')
-	 println('Got ${buf.data} data')
-	 println(c)
-	 c.write(buf) or { panic(err) }
-	
-			title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;$server_guid;boundstone;Creative;'
-			len := 35 + title.len
-			mut pong := UnConnectedPong{
-				p: new_packet([]byte{len:len}, u32(len))
-				server_guid: server_guid
-				//send_timestamp: ping.send_timestamp
-				send_timestamp: timestamp()
-				data: title.bytes()
-			}
-			//packet.buffer.reset()
-			pong.p.address = addr
-			pong.encode(mut pong.p.buffer)
-
-
-	//c.write_to(addr, pong.p.buffer.buffer) or { panic(err)}
+	buf = buf[..bytes_read]
+	 println('Got address $client_addr')
+		println('Got $bytes_read vs $buf.len bytes: "$buf.bytestr()"')
 	return Packet{
-		buffer: new_bytebuffer(buf, u32(read))
-		address: addr
+		buffer: new_bytebuffer(buf, u32(bytes_read))
+		address: client_addr
 	}
 }
 
 fn (s UdpSocket) send(p Packet) ?int {
-	println('dialudp')
-	println('UdpSocket sending to $p.address')
-
-	return 0
+		println('Writing to address $p.address: $p.buffer.buffer')
+		mut sock := s.s
+		mut error := sock.write_to(p.address, p.buffer.buffer) or { panic(err) }//sends thedata to the client C.sendto, returns int on error, none otherwise
+		if error == p.buffer.length{
+		println('Success')
+		return error
+		}else{
+		println('Failed')
+		return error}
 }
 
 fn (mut s UdpSocket) close() {

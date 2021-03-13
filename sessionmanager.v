@@ -36,20 +36,14 @@ pub fn (mut s SessionManager) run() {
 	for !s.shutdown {
 		s.receive_packet()
 		for i, _ in s.sessions {
-			s.sessions[i].update()
+			s.sessions[i].update()//todo maybe only update current session?
 		}
 	}
 }
 
 fn (mut s SessionManager) receive_packet() {
 	mut packet := s.socket.receive() or { return }
-	// if packet.address.saddr != '192.168.43.240' { return }
-	println('received!')
-	println(packet)
-	//s.shutdown = true
-	//return
-	 //TODO debug, remove ^
-	packet.buffer.print()
+	println('received $packet!')
 	pid := packet.buffer.get_byte()
 	if s.session_exists(packet.address) {
 		println('Session exists: $packet.address')
@@ -76,25 +70,22 @@ fn (mut s SessionManager) receive_packet() {
 		println('Session not found: $packet.address $pid')
 		if pid == id_unconnected_ping {
 			mut ping := UnConnectedPing{
-				p: new_packet_from_packet(packet)
+				//p: new_packet_from_packet(packet)
 			}
 			ping.decode(mut packet.buffer)
-			//title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;$server_guid;boundstone;Creative;'
-			title := 'MCPE;PocketMine-MP Server;422;1.16.200;0;20;6110147563508788599;PocketMine-MP;Creative;'
+			title := 'MCPE;Minecraft V Server!;419;1.16.200;0;100;$server_guid;boundstone;Creative;'
 			len := 35 + title.len
+			mut buf := []byte{len: len}
 			mut pong := UnConnectedPong{
-				p: new_packet([]byte{len:len}, u32(len))
-				//server_guid: server_guid
-				server_guid: 6110147563508788599
+				p: new_packet(buf, u32(len))//TODO remove
+				server_guid: server_guid
 				send_timestamp: ping.send_timestamp
 				//send_timestamp: timestamp()
 				data: title.bytes()
 			}
 			//packet.buffer.reset()
 			pong.encode(mut pong.p.buffer)
-			pong.p.address = ping.p.address
-			println(pong)
-			// pong,
+			pong.p.address = packet.address
 			s.socket.send(pong.p) or { panic(err) }
 		} else if pid == id_open_connection_request1 {
 			mut request := OpenConnectionRequest1{
