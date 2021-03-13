@@ -26,7 +26,7 @@ pub fn (mut r VRakLib) start(ch1 chan OpenSessionData, ch2 chan HandleEncapsulat
 	println('RakNet thread starting')
 	println('Address: ' + r.address.str())
 	r.shutdown = false // address,
-	socket := create_socket(r.address.port) or { panic(err) }
+	socket := create_socket(r.address) or { panic(err) }
 	// r.address = socket.s.sock.address() or { panic(err) }
 	//r.address = address
 	 r.channel_sessions = ch1

@@ -15,6 +15,7 @@ pub fn (mut r UnConnectedPong) encode(mut b ByteBuffer) {
 	b.put_byte(id_unconnected_pong)
 	b.put_ulong(r.send_timestamp)
 	b.put_ulong(r.server_guid)
+	r.magic = get_packet_magic()
 	b.put_bytes(get_packet_magic(), raknet_magic_length)
 	b.put_ushort(u16(r.data.len))
 	b.put_bytes(r.data, r.data.len)

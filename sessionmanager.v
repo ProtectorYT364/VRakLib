@@ -79,18 +79,21 @@ fn (mut s SessionManager) receive_packet() {
 				p: new_packet_from_packet(packet)
 			}
 			ping.decode(mut packet.buffer)
-			title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;$server_guid;boundstone;Creative;'
+			//title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;$server_guid;boundstone;Creative;'
+			title := 'MCPE;PocketMine-MP Server;422;1.16.200;0;20;6110147563508788599;PocketMine-MP;Creative;'
 			len := 35 + title.len
 			mut pong := UnConnectedPong{
 				p: new_packet([]byte{len:len}, u32(len))
-				server_guid: server_guid
+				//server_guid: server_guid
+				server_guid: 6110147563508788599
 				send_timestamp: ping.send_timestamp
+				//send_timestamp: timestamp()
 				data: title.bytes()
 			}
 			//packet.buffer.reset()
 			pong.encode(mut pong.p.buffer)
-			println(pong)
 			pong.p.address = ping.p.address
+			println(pong)
 			// pong,
 			s.socket.send(pong.p)
 		} else if pid == id_open_connection_request1 {
