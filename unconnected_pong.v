@@ -16,7 +16,7 @@ pub fn (mut r UnConnectedPong) encode(mut b ByteBuffer) {
 	b.put_ulong(r.send_timestamp)
 	b.put_ulong(r.server_guid)
 	r.magic = get_packet_magic()
-	b.put_bytes(get_packet_magic(), raknet_magic_length)
+	b.put_bytes(r.magic, r.magic.len)
 	b.put_ushort(u16(r.data.len))
 	b.put_bytes(r.data, r.data.len)
 }
@@ -24,8 +24,9 @@ pub fn (mut r UnConnectedPong) encode(mut b ByteBuffer) {
 pub fn (mut r UnConnectedPong) decode(mut b ByteBuffer) {
 	r.send_timestamp = b.get_ulong()
 	r.server_guid = b.get_ulong()
-	r.magic = b.get_bytes(raknet_magic_length)
+	r.magic = b.get_bytes(get_packet_magic().len)
 	mut l := i16(b.get_short()) // todo u16 or i16?
+	println(l)
 	// data := []byte{ len: len }
 	l = i16(b.length - b.position) // todo u16 or i16?
 	r.data = b.get_bytes(l)

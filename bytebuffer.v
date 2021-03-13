@@ -11,14 +11,13 @@ struct ByteBuffer {
 pub mut:
 	endianness Endianness
 	buffer     []byte
-	length     u32
+	length     u32//TODO remove
 	position   u32
 }
 
 pub fn new_bytebuffer(buffer []byte) &ByteBuffer {
 	return &ByteBuffer{
-		// endianness: Endianness.little // Network order
-		endianness: Endianness.big // Network order
+		endianness: Endianness.little // Network order
 		buffer: buffer
 		length: u32(buffer.len)
 		position: u32(0)
@@ -81,6 +80,7 @@ pub fn (mut b ByteBuffer) put_short(v i16) {
 	assert b.position + u32(sizeof(i16)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = i16(swap16(u16(v)))
 	}
 	unsafe {
@@ -96,6 +96,7 @@ pub fn (mut b ByteBuffer) put_ushort(v u16) {
 	assert b.position + u32(sizeof(u16)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = swap16(v)
 	}
 	unsafe {
@@ -129,6 +130,7 @@ pub fn (mut b ByteBuffer) put_int(v int) {
 	assert b.position + u32(sizeof(int)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = int(swap32(u32(v)))
 	}
 	unsafe {
@@ -144,6 +146,7 @@ pub fn (mut b ByteBuffer) put_uint(v u32) {
 	assert b.position + u32(sizeof(u32)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = swap32(v)
 	}
 	unsafe {
@@ -159,6 +162,7 @@ pub fn (mut b ByteBuffer) put_long(v i64) {
 	assert b.position + u32(sizeof(i64)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = i64(swap64(u64(v)))
 	}
 	unsafe {
@@ -178,6 +182,7 @@ pub fn (mut b ByteBuffer) put_ulong(v u64) {
 	assert b.position + u32(sizeof(u64)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = swap64(v)
 	}
 	unsafe {
@@ -197,6 +202,7 @@ pub fn (mut b ByteBuffer) put_float(v f32) {
 	assert b.position + u32(sizeof(f32)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = swapf(v)
 	}
 	as_int := &u32(&vv)
@@ -213,6 +219,7 @@ pub fn (mut b ByteBuffer) put_double(v f64) {
 	assert b.position + u32(sizeof(f64)) <= b.length
 	mut vv := v
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = swapd(v)
 	}
 	as_int := &u64(&vv)
@@ -286,6 +293,7 @@ pub fn (mut b ByteBuffer) get_short() i16 {
 	mut v := unsafe {i16(b.buffer[b.position + u32(1)]) | (i16(b.buffer[b.position])<<i16(8))}
 	b.position += u32(sizeof(i16))
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		v = i16(swap16(u16(v)))
 	}
 	return v
@@ -298,6 +306,7 @@ pub fn (mut b ByteBuffer) get_ushort() u16 {
 	mut v := unsafe {u16(b.buffer[b.position + u32(1)]) | (u16(b.buffer[b.position])<<u16(8))}
 	b.position += u32(sizeof(u16))
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		v = swap16(v)
 	}
 	return v
@@ -326,6 +335,7 @@ pub fn (mut b ByteBuffer) get_int() int {
 		u32(3)])}
 	b.position += u32(sizeof(int))
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		v = int(swap32(u32(v)))
 	}
 	return v
@@ -338,6 +348,7 @@ pub fn (mut b ByteBuffer) get_uint() u32 {
 		u32(3)])}
 	b.position += u32(sizeof(u32))
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		v = swap32(v)
 	}
 	return v
@@ -352,6 +363,7 @@ pub fn (mut b ByteBuffer) get_long() i64 {
 		u32(7)])}
 	b.position += u32(sizeof(i64))
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		v = i64(swap64(u64(v)))
 	}
 	return v
@@ -366,6 +378,7 @@ pub fn (mut b ByteBuffer) get_ulong() u64 {
 		u32(7)])}
 	b.position += u32(sizeof(u64))
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		v = swap64(v)
 	}
 	return v
@@ -380,6 +393,7 @@ pub fn (mut b ByteBuffer) get_float() f32 {
 	b.position += u32(sizeof(f32))
 	mut vv := *ptr
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = swapf(vv)
 	}
 	return vv
@@ -396,6 +410,7 @@ pub fn (mut b ByteBuffer) get_double() f64 {
 	b.position += u32(sizeof(f64))
 	mut vv := *ptr
 	if b.get_system_endianness() != b.endianness {
+		println('ENDIANNESS')
 		vv = swapd(vv)
 	}
 	return vv
@@ -420,10 +435,7 @@ pub fn (b ByteBuffer) get_system_endianness() Endianness {
 	$if little_endian {
 		return Endianness.little
 	}
-	$if big_endian {
-		return Endianness.big
-	}
-	return Endianness.little
+	return Endianness.big
 }
 
 pub fn (b ByteBuffer) print() {

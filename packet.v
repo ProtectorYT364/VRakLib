@@ -51,18 +51,11 @@ pub mut:
 
 fn new_packet_from_packet(packet Packet) Packet {
 	return new_packet(packet.buffer.buffer, packet.address)
-	//  return Packet{
-	//  	buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
-	//  	address: packet.address
-	//  }
 }
 
 pub fn new_packet(buffer []byte, addr net.Addr) Packet {
 	buf := new_bytebuffer(buffer)
 	return new_packet_from_bytebuffer(buf, addr)
-	// return Packet{
-	// 	buffer: new_bytebuffer(buffer, length)
-	// }
 }
 
 fn new_packet_from_bytebuffer(buffer ByteBuffer, addr net.Addr) Packet {
@@ -114,6 +107,7 @@ fn (mut p Packet) get_address() net.Addr {
 }
 
 fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
+println('FROM BINARY $p')
 	mut packets := []EncapsulatedPacket{}
 	mut packet := p
 	for packet.buffer.position < packet.buffer.length {
@@ -159,6 +153,7 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
 }
 
 fn (p EncapsulatedPacket) to_binary() Packet {//AKA write
+println('TO BINARY $p')
 	mut packet := Packet{
 		buffer: new_bytebuffer([]byte{len:int(p.get_length())})
 	}

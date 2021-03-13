@@ -16,7 +16,8 @@ mut:
 }
 
 const(
-	server_guid = 1234567890123456
+	//server_guid = 1234567890
+	server_guid = 16966519777446909958
 )
 
 pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
@@ -74,7 +75,8 @@ fn (mut s SessionManager) receive_packet() {
 				p: new_packet_from_packet(packet)
 			}
 			ping.decode(mut packet.buffer)
-			title := 'MCPE;Minecraft V Server!;419;1.16.200;0;100;$server_guid;boundstone;Creative;'
+			//title := 'MCPE;Minecraft V Server!;422;1.16.200;0;100;$server_guid;boundstone;Creative;'
+			title := 'MCPE;WolvesFortress - Your MMORPG Server;422;1.16.200;0;19132;493245700145903083;PocketMine-MP;Creative;'
 			len := 35 + title.len
 			mut buf := []byte{len: len}
 			mut pong := UnConnectedPong{
