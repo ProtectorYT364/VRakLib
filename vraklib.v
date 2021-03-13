@@ -2,6 +2,7 @@ module vraklib
 
 import net
 import sync
+import time
 
 pub struct VRakLib {
 pub mut:
@@ -59,6 +60,11 @@ fn (r VRakLib) put_packet(identifier string, packet Packet, need_ack bool, immed
 }
 
 fn (r VRakLib) update_ping() {
+}
+
+// timestamp returns a timestamp in milliseconds.
+pub fn timestamp() u64 {
+	return time.now().unix_time_milli()
 }
 
 struct OpenSessionData {
