@@ -1,13 +1,13 @@
 module vraklib
 
 pub struct UnConnectedPong {
-mut:
+//mut:
+pub mut://TODO just for debug
 	p              Packet
 	// magic [16]byte
 	magic          []byte
 	send_timestamp u64
 	server_guid    u64
-pub mut://TODO just for debug
 	data           []byte
 }
 

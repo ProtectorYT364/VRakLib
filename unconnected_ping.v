@@ -5,6 +5,7 @@ mut:
 	p              Packet
 	// magic [16]byte
 	magic          []byte
+pub mut:
 	send_timestamp u64
 	client_guid    u64
 }

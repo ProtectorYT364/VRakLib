@@ -419,11 +419,13 @@ pub fn (mut b ByteBuffer) get_string() string {
 }
 
 pub fn (b ByteBuffer) get_system_endianness() Endianness {
-	if C.__BYTE_ORDER__ == C.__ORDER_LITTLE_ENDIAN__ {
+	$if little_endian {
 		return Endianness.little
-	} else {
+	}
+	$if big_endian {
 		return Endianness.big
 	}
+	return Endianness.little
 }
 
 pub fn (b ByteBuffer) print() {

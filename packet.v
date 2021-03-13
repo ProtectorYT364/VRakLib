@@ -58,7 +58,7 @@ fn new_packet_from_packet(packet Packet) Packet {//TODO wtf can't i clone it ins
 	// }
 }
 
-fn new_packet(buffer []byte, length u32) Packet {
+pub fn new_packet(buffer []byte, length u32) Packet {
 	return Packet{
 		buffer: new_bytebuffer(buffer, length)
 	}

@@ -95,7 +95,7 @@ fn (mut s SessionManager) receive_packet() {
 			pong.p.address = ping.p.address
 			println(pong)
 			// pong,
-			s.socket.send(pong.p)
+			s.socket.send(pong.p) or { panic(err) }
 		} else if pid == id_open_connection_request1 {
 			mut request := OpenConnectionRequest1{
 				p: new_packet_from_packet(packet)
@@ -111,7 +111,7 @@ fn (mut s SessionManager) receive_packet() {
 				incompatible.encode()
 				incompatible.p.address = request.p.address
 				// incompatible,
-				s.socket.send(incompatible.p)
+				s.socket.send(incompatible.p) or { panic(err) }
 				return
 			}
 			mut reply := OpenConnectionReply1{
@@ -124,7 +124,7 @@ fn (mut s SessionManager) receive_packet() {
 			reply.encode()
 			reply.p.address = request.p.address
 			// reply,
-			s.socket.send(reply.p)
+			s.socket.send(reply.p) or { panic(err) }
 		} else if pid == id_open_connection_request2 {
 			mut request := OpenConnectionRequest2{
 				p: new_packet_from_packet(packet)
@@ -145,7 +145,7 @@ fn (mut s SessionManager) receive_packet() {
 			reply.encode()
 			reply.p.address = request.p.address
 			// reply,
-			s.socket.send(reply.p)
+			s.socket.send(reply.p) or { panic(err) }
 			s.create_session(request.p.address, request.client_guid, request.mtu_size)
 		}
 	}
@@ -175,7 +175,7 @@ fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_si
 }
 
 fn (s SessionManager) send_packet(p Packet) {
-	s.socket.send(p)
+	s.socket.send(p) or { panic(err) }
 }
 
 fn (mut s SessionManager) open_session(session Session) {
