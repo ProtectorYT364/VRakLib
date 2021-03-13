@@ -70,42 +70,6 @@ fn get_packet_magic() []byte {
 		0x34, 0x56, 0x78]
 }
 
-fn (mut p Packet) put_address(address net.Addr) {
-	p.buffer.put_byte(4)
-	// if address.version == 4 {
-	numbers := address.saddr.split('.')
-	for num in numbers {
-		p.buffer.put_char(i8(~num.int() & 0xFF))
-	}
-	p.buffer.put_ushort(u16(address.port))
-	// }
-	// TODO IPv6
-}
-
-fn (mut p Packet) get_address() net.Addr {
-	ver := p.buffer.get_byte()
-	if ver == 4 {
-		ip_bytes := p.buffer.get_bytes(4)
-		port := p.buffer.get_ushort() // u16(address.port)
-		println(ip_bytes.str()) // TODO
-		println(port.str()) // TODO
-		// HACK
-		address := net.Addr{
-			saddr: ((-ip_bytes[0] - 1) &
-				0xff).str() + '.' + ((-ip_bytes[1] - 1) &
-				0xff).str() + '.' + ((-ip_bytes[2] - 1) &
-				0xff).str() + '.' + ((-ip_bytes[3] - 1) &
-				0xff).str()
-			port: port
-		}
-		println(address)
-		return address
-	} else {
-		panic('Only IPv4 is supported for now')
-	}
-	// TODO IPv6
-}
-
 fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
 println('FROM BINARY $p')
 	mut packets := []EncapsulatedPacket{}

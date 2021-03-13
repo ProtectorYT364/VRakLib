@@ -46,7 +46,7 @@ fn (mut s SessionManager) receive_packet() {
 	mut packet := s.socket.receive() or { return }
 	pid := packet.buffer.get_byte()
 	println('received $pid $packet!')
-	packet.buffer.rewind()
+	//packet.buffer.rewind()
 	if s.session_exists(packet.address) {
 		println('Session exists: $packet.address')
 		mut session := s.get_session_by_address(packet.address)
@@ -75,8 +75,7 @@ fn (mut s SessionManager) receive_packet() {
 				p: new_packet_from_packet(packet)
 			}
 			ping.decode(mut packet.buffer)
-			//title := 'MCPE;Minecraft V Server!;422;1.16.200;0;100;$server_guid;boundstone;Creative;'
-			title := 'MCPE;WolvesFortress - Your MMORPG Server;422;1.16.200;0;19132;493245700145903083;PocketMine-MP;Creative;'
+			title := 'MCPE;Minecraft V Server!;422;1.16.200;0;100;$server_guid;boundstone;Creative;'
 			len := 35 + title.len
 			mut buf := []byte{len: len}
 			mut pong := UnConnectedPong{
@@ -96,7 +95,7 @@ fn (mut s SessionManager) receive_packet() {
 			}
 			request.decode(mut packet.buffer)
 			println(request)
-			if request.protocol != 9 {
+			if request.protocol != 10 {
 				mut incompatible := IncompatibleProtocolVersion{
 					p: new_packet([]byte{len:26}, packet.address)
 					protocol: 10
@@ -122,6 +121,8 @@ fn (mut s SessionManager) receive_packet() {
 			// reply,
 			s.socket.send(reply.p) or { panic(err) }
 		} else if pid == id_open_connection_request2 {
+			println(packet.buffer.buffer.bytestr())
+			packet.buffer.print()
 			mut request := OpenConnectionRequest2{
 				p: new_packet_from_packet(packet)
 			}

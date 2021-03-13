@@ -1,5 +1,6 @@
 module vraklib
 
+import net
 // import encoding.binary//endian + put/get methods
 // import io//BufferedReader
 enum Endianness {
@@ -429,6 +430,43 @@ pub fn (mut b ByteBuffer) get_string() string {
 		}
 	}
 	return tos(v.data, size)//TODO can maybe remove this
+}
+
+pub fn (mut b ByteBuffer) put_address(address net.Addr) {
+	b.put_byte(4)
+	// if address.version == 4 {
+	numbers := address.saddr.split('.')
+	for num in numbers {
+		b.put_char(i8(~num.int() & 0xFF))
+	}
+	b.put_ushort(u16(address.port))
+	// }
+	// TODO IPv6
+}
+
+pub fn (mut b ByteBuffer) get_address() net.Addr {
+	ver := b.get_byte()
+	println(ver)
+	if ver == 4 {
+		ip_bytes := b.get_bytes(4)
+		port := b.get_ushort() // u16(address.port)
+		println(ip_bytes.str()) // TODO
+		println(port.str()) // TODO
+		// HACK
+		address := net.Addr{
+			saddr: ((-ip_bytes[0] - 1) &
+				0xff).str() + '.' + ((-ip_bytes[1] - 1) &
+				0xff).str() + '.' + ((-ip_bytes[2] - 1) &
+				0xff).str() + '.' + ((-ip_bytes[3] - 1) &
+				0xff).str()
+			port: port
+		}
+		println(address)
+		return address
+	} else {
+		panic('Only IPv4 is supported for now')
+	}
+	// TODO IPv6
 }
 
 pub fn (b ByteBuffer) get_system_endianness() Endianness {

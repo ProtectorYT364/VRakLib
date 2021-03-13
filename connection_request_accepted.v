@@ -13,20 +13,20 @@ mut:
 
 fn (mut r ConnectionRequestAccepted) encode(mut b ByteBuffer) {
 	b.put_byte(id_connection_request_accepted)
-	r.p.put_address(r.client_address)
+	b.put_address(r.client_address)
 	b.put_short(i16(0))
 	for _, addr in r.system_addresses {
-		r.p.put_address(addr)
+		b.put_address(addr)
 	}
 	b.put_ulong(r.request_timestamp)
 	b.put_ulong(r.accepted_timestamp)
 }
 
 fn (mut r ConnectionRequestAccepted) decode(mut b ByteBuffer) {
-	r.client_address = r.p.get_address() // _ =
+	r.client_address = b.get_address() // _ =
 	b.get_bytes(2)
 	for i := 0; i < 20; i++ {
-		r.system_addresses[i] = r.p.get_address()
+		r.system_addresses[i] = b.get_address()
 		if b.len() == 16 {
 			break
 		}
