@@ -173,6 +173,7 @@ fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_si
 }
 
 fn (s SessionManager) send_packet(p Packet) {
+	println(p)
 	s.socket.send(p) or { panic(err) }
 }
 
