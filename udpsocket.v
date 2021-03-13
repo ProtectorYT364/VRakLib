@@ -21,14 +21,17 @@ pub fn create_socket(port int) ?UdpSocket {
 	// s.bind( port ) or { panic(err) }
 	//mut conn := net.listen_udp(port) or { panic(err) }
 	mut conn := net.listen_udp(port)?
+	println('listening $conn')
 	return UdpSocket{conn}
 }
 
 fn (s UdpSocket) receive() ?Packet {
 	bufsize := default_buffer_size
 	mut c := s.s
-	mut buf := []byte{len: bufsize, init: 0}
+	mut buf := []byte{len: bufsize/*, init: 0*/}
 	read, addr := c.read(mut buf) or { return none }
+	//trim buffer
+	buf = buf[..read]
 	// println('Got address $addr')
 	// println('Got $read bytes')
 	// println('Got ${buf.data} bytes')

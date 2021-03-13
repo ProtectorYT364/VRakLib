@@ -29,8 +29,18 @@ pub fn (mut b ByteBuffer) len() u32 {
 	return b.length
 }
 
+pub fn (mut b ByteBuffer) reset() {
+	b.rewind()
+	b.buffer = []byte{len:default_buffer_size}
+	b.length = u32(b.buffer.len)
+}
+
+pub fn (mut b ByteBuffer) rewind() {
+	b.position = 0
+}
+
 pub fn (mut b ByteBuffer) put_byte(v byte) {
-	assert b.position + u32(sizeof(byte)) <= b.length
+	assert b.position + 1 <= b.length
 	unsafe {
 		b.buffer[b.position] = v
 	}

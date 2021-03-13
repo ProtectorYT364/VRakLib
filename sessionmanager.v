@@ -42,6 +42,9 @@ fn (mut s SessionManager) receive_packet() {
 	// if packet.address.saddr != '192.168.43.240' { return }
 	println('received!')
 	println(packet)
+	//s.shutdown = true
+	//return
+	 //TODO debug, remove ^
 	packet.buffer.print()
 	pid := packet.buffer.get_byte()
 	if s.session_exists(packet.address) {
@@ -80,6 +83,7 @@ fn (mut s SessionManager) receive_packet() {
 				send_timestamp: ping.send_timestamp
 				data: title.bytes()
 			}
+			packet.buffer.reset()
 			pong.encode(packet.buffer)
 			println(pong)
 			pong.p.address = ping.p.address
@@ -96,6 +100,7 @@ fn (mut s SessionManager) receive_packet() {
 					protocol: 10
 					server_guid: 123456789
 				}
+				packet.buffer.reset()
 				incompatible.encode()
 				incompatible.p.address = request.p.address
 				// incompatible,
@@ -108,6 +113,7 @@ fn (mut s SessionManager) receive_packet() {
 				server_guid: 123456789
 				mtu_size: request.mtu_size + u16(28)
 			}
+			packet.buffer.reset()
 			reply.encode()
 			reply.p.address = request.p.address
 			// reply,
@@ -128,6 +134,7 @@ fn (mut s SessionManager) receive_packet() {
 				mtu_size: request.mtu_size
 				secure: false
 			}
+			packet.buffer.reset()
 			reply.encode()
 			reply.p.address = request.p.address
 			// reply,
