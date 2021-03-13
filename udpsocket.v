@@ -54,9 +54,8 @@ fn (s UdpSocket) send(p Packet) ?int {
 	// return error('Could not send the packet')
 	// }
 	// return res
-	println('UdpSocket send')
-	println(p.address)
-	p.buffer.print()
+	println('UdpSocket send to $p.address')
+	//p.buffer.print()
 	return 0//TODO
 }
 

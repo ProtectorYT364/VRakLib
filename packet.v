@@ -50,10 +50,12 @@ pub mut:
 }
 
 fn new_packet_from_packet(packet Packet) Packet {//TODO wtf can't i clone it instead or sth? smh
-	return Packet{
-		buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
-		address: packet.address
-	}
+	println(packet.buffer.buffer[0])
+	return packet
+	// return Packet{
+	// 	buffer: new_bytebuffer(packet.buffer.buffer, packet.buffer.length)
+	// 	address: packet.address
+	// }
 }
 
 fn new_packet(buffer []byte, length u32) Packet {

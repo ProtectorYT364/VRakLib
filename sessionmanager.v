@@ -15,6 +15,10 @@ mut:
 	next_session_id    int
 }
 
+const(
+	server_guid = 123456789
+)
+
 pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
 	sm := &SessionManager{
 		server: r
@@ -74,17 +78,17 @@ fn (mut s SessionManager) receive_packet() {
 			mut ping := UnConnectedPing{
 				p: new_packet_from_packet(packet)
 			}
-			ping.decode(packet.buffer)
-			title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;123456789;boundstone;Creative;'
+			ping.decode(mut packet.buffer)
+			title := 'MCPE;Minecraft V Server!;419;1.16.100;0;100;$server_guid;boundstone;Creative;'
 			len := 35 + title.len
 			mut pong := UnConnectedPong{
-				p: new_packet([byte(0)].repeat(len), u32(len))
-				server_guid: 123456789
+				p: new_packet([]byte{len:len}, u32(len))
+				server_guid: server_guid
 				send_timestamp: ping.send_timestamp
 				data: title.bytes()
 			}
-			packet.buffer.reset()
-			pong.encode(packet.buffer)
+			//packet.buffer.reset()
+			pong.encode(mut pong.p.buffer)
 			println(pong)
 			pong.p.address = ping.p.address
 			// pong,
@@ -96,11 +100,11 @@ fn (mut s SessionManager) receive_packet() {
 			request.decode()
 			if request.protocol != 9 {
 				mut incompatible := IncompatibleProtocolVersion{
-					p: new_packet([byte(0)].repeat(26), u32(26))
+					p: new_packet([]byte{len:26}, u32(26))
 					protocol: 10
-					server_guid: 123456789
+					server_guid: server_guid
 				}
-				packet.buffer.reset()
+				//packet.buffer.reset()
 				incompatible.encode()
 				incompatible.p.address = request.p.address
 				// incompatible,
@@ -108,12 +112,12 @@ fn (mut s SessionManager) receive_packet() {
 				return
 			}
 			mut reply := OpenConnectionReply1{
-				p: new_packet([byte(0)].repeat(28), u32(28))
+				p: new_packet([]byte{len:28}, u32(28))
 				secure: false
-				server_guid: 123456789
+				server_guid: server_guid
 				mtu_size: request.mtu_size + u16(28)
 			}
-			packet.buffer.reset()
+			//packet.buffer.reset()
 			reply.encode()
 			reply.p.address = request.p.address
 			// reply,
@@ -128,13 +132,13 @@ fn (mut s SessionManager) receive_packet() {
 				return
 			}
 			mut reply := OpenConnectionReply2{
-				p: new_packet([byte(0)].repeat(35), u32(35))
-				server_guid: 123456789
+				p: new_packet([]byte{len:35}, u32(35))
+				server_guid: server_guid
 				client_address: request.p.address
 				mtu_size: request.mtu_size
 				secure: false
 			}
-			packet.buffer.reset()
+			//packet.buffer.reset()
 			reply.encode()
 			reply.p.address = request.p.address
 			// reply,
