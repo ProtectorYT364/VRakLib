@@ -80,7 +80,7 @@ fn (mut s SessionManager) receive_packet() {
 				send_timestamp: ping.send_timestamp
 				data: title.bytes()
 			}
-			pong.encode()
+			pong.encode(packet.buffer)
 			println(pong)
 			pong.p.address = ping.p.address
 			// pong,

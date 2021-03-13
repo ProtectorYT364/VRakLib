@@ -233,6 +233,8 @@ pub fn (mut b ByteBuffer) put_string(v string) {
 }
 
 pub fn (mut b ByteBuffer) get_bytes(size int) []byte {
+	println(b.position)
+	println(size)
 	assert b.position + u32(size) <= b.length
 	if size == 0 {
 		// return []byte
@@ -271,7 +273,9 @@ pub fn (mut b ByteBuffer) get_bool() bool {
 
 pub fn (mut b ByteBuffer) get_short() i16 {
 	assert b.position + u32(sizeof(i16)) <= b.length
-	mut v := unsafe {i16(i16(b.buffer[b.position]) << i16(8)) | i16(b.buffer[b.position + u32(1)])}
+	//	return i16(b[1]) | (i16(b[0])<<i16(8))
+	//mut v := unsafe {i16(i16(b.buffer[b.position]) << i16(8)) | i16(b.buffer[b.position + u32(1)])}
+	mut v := unsafe {i16(b.buffer[b.position + u32(1)]) | (i16(b.buffer[b.position])<<i16(8))}
 	b.position += u32(sizeof(i16))
 	if b.get_system_endianness() != b.endianness {
 		v = i16(swap16(u16(v)))
@@ -281,7 +285,9 @@ pub fn (mut b ByteBuffer) get_short() i16 {
 
 pub fn (mut b ByteBuffer) get_ushort() u16 {
 	assert b.position + u32(sizeof(u16)) <= b.length
-	mut v := unsafe {u16(u16(b.buffer[b.position]) << u16(8)) | u16(b.buffer[b.position + u32(1)])}
+	//	return u16(b[1]) | (u16(b[0])<<u16(8))
+	//mut v := unsafe {u16(u16(b.buffer[b.position]) << u16(8)) | u16(b.buffer[b.position + u32(1)])}
+	mut v := unsafe {u16(b.buffer[b.position + u32(1)]) | (u16(b.buffer[b.position])<<u16(8))}
 	b.position += u32(sizeof(u16))
 	if b.get_system_endianness() != b.endianness {
 		v = swap16(v)
