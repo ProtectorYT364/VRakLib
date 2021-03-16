@@ -36,19 +36,6 @@ pub mut:
 	identifier_ack int
 }
 
-// Datagram packets are used to implement a connectionless packet delivery service.
-// Each message is routed from one machine to another based solely on information
-// contained within that packet. Multiple packets sent from one machine to another
-// might be routed differently, and might arrive in any order.
-// Packet delivery is not guaranteed.
-struct Datagram {
-pub mut:
-	p               Packet
-	packet_id       byte
-	sequence_number u32 = -1
-	packets         []EncapsulatedPacket
-}
-
 fn new_packet_from_packet(packet Packet) Packet {
 	return new_packet(packet.buffer.buffer, packet.address)
 }
@@ -92,7 +79,8 @@ println('FROM BINARY $p')
 				internal_packet.order_index = packet.buffer.get_ltriad()
 				// Order channel, we don't care about this.
 				//internal_packet.order_channel =
-				_ = packet.buffer.get_byte()
+				//_ = packet.buffer.get_byte()
+				internal_packet.order_channel = packet.buffer.get_byte()
 			}
 		}
 		if internal_packet.has_split {
@@ -101,17 +89,17 @@ println('FROM BINARY $p')
 			internal_packet.split_index = u32(packet.buffer.get_int())//TODO check if this needs to be uint
 		}
 		internal_packet.buffer = packet.buffer.get_bytes(&length)
-		packets << internal_packet
-		// println('length: ${internal_packet.length}')
-		// println('reliability: ${internal_packet.reliability}')
-		// println('has_split: ${internal_packet.has_split}')
-		// println('message_index: ${internal_packet.message_index}')
-		// println('sequence_index: ${internal_packet.sequence_index}')
-		// println('order_index: ${internal_packet.order_index}')
-		// println('order_channel: ${internal_packet.order_channel}')
-		// println('split_count: ${internal_packet.split_count}')
-		// println('split_id: ${internal_packet.split_id}')
-		// println('split_index: ${internal_packet.split_index}')
+		//packets << internal_packet
+		println('length: ${internal_packet.length}')
+		println('reliability: ${internal_packet.reliability}')
+		println('has_split: ${internal_packet.has_split}')
+		println('message_index: ${internal_packet.message_index}')
+		println('sequence_index: ${internal_packet.sequence_index}')
+		println('order_index: ${internal_packet.order_index}')
+		println('order_channel: ${internal_packet.order_channel}')
+		println('split_count: ${internal_packet.split_count}')
+		println('split_id: ${internal_packet.split_id}')
+		println('split_index: ${internal_packet.split_index}')
 	}
 	return packets
 }
@@ -151,29 +139,4 @@ fn (e EncapsulatedPacket) get_length() u32 {
     return u32(u16(3) + e.length + u16(if int(e.message_index) != -1 { 3 } else { 0 })
      + u16(if int(e.order_index) != -1 { 4 } else { 0 })
      + u16(if e.has_split { 10 } else { 0 }))
-}
-
-fn (c Datagram) get_total_length() u32 {
-	mut total_length := u32(4)
-	for packet in c.packets {
-		total_length += packet.get_length()
-	}
-	return total_length
-}
-
-fn (mut c Datagram) decode() {
-	c.packet_id = c.p.buffer.get_byte()
-	c.sequence_number = c.p.buffer.get_ltriad()
-	c.packets = encapsulated_packet_from_binary(c.p)
-}
-
-fn (mut c Datagram) encode() {
-	c.p.buffer.length = c.get_total_length()
-	c.p.buffer.buffer = [byte(0)].repeat(int(c.get_total_length()))
-	c.p.buffer.put_byte(byte(bitflag_valid) | c.packet_id)
-	c.p.buffer.put_ltriad(c.sequence_number)
-	for internal_packet in c.packets {
-		packet := internal_packet.to_binary()
-		c.p.buffer.put_bytes(packet.buffer.buffer, int(packet.buffer.length))
-	}
 }
