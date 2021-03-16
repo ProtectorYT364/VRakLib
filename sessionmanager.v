@@ -75,7 +75,7 @@ fn (mut s SessionManager) receive_packet() {
 				p: new_packet_from_packet(packet)
 			}
 			ping.decode(mut packet.buffer)
-			title := 'MCPE;Minecraft V Server!;422;1.16.200;0;100;$server_guid;boundstone;Creative;'
+			title := s.server.pong_data.update_pong_data()
 			len := 35 + title.len
 			mut buf := []byte{len: len}
 			mut pong := UnConnectedPong{

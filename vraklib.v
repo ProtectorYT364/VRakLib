@@ -12,11 +12,17 @@ pub mut:
 	address              net.Addr
 	session_manager      SessionManager
 	shutdown             bool
+	pong_data PongData
 }
 
-pub fn new_vraklib(address net.Addr) &VRakLib {
+pub fn new_vraklib(address net.Addr) &VRakLib {//TODO pass server config for pongdata
+	pongdata := PongData{
+		server_id: server_guid
+		port: address.port
+	}
 	vr := &VRakLib{
 		address: address
+		pong_data: pongdata
 	}
 	return vr
 }
