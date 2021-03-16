@@ -6,7 +6,7 @@ struct ServerStatus{
 	max_players int = 1337
 	show_version bool = true
 }
-struct PongData{
+pub struct PongData{
 	pub mut:
 	status ServerStatus
 	current_protocol int = 422//TODO move to protocol
@@ -17,7 +17,7 @@ struct PongData{
 	software string = 'boundstone'//validate
 }
 
-fn(mut p PongData) update_pong_data() string{
+pub fn(mut p PongData) update_pong_data() string{
 	p.server_id = server_guid
 	mut ver := ''
 	if p.status.show_version { ver = '1.16.200'}//todo get from protocol.current_version
