@@ -53,18 +53,18 @@ fn (mut s SessionManager) receive_packet() {
 		if (pid & bitflag_valid) != 0 {
 			println('valid $pid')
 			if (pid & bitflag_ack) != 0 {
-				println('ack $pid')
-				// ACK
-				println('ack')
+				ack_id := packet.buffer.get_int()
+				println('ack $pid $ack_id')
+				panic('ded')
 			} else if (pid & bitflag_nak) != 0 {
 				println('nack $pid')
 				// NACK
 				println('nack')
 			} else {
-				println('datagram $pid')
 				datagram := Datagram{
 					p: new_packet_from_packet(packet)
 				}
+				println('datagram $pid $datagram')
 				session.handle_packet(datagram)
 			}
 		}
@@ -142,6 +142,7 @@ fn (mut s SessionManager) receive_packet() {
 			//packet.buffer.reset()
 			reply.encode(mut reply.p.buffer)
 			reply.p.address = request.p.address
+			println(reply)
 			// reply,
 			s.socket.send(reply.p) or { panic(err) }
 			s.create_session(request.p.address, request.client_guid, request.mtu_size)
@@ -173,7 +174,7 @@ fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_si
 }
 
 fn (s SessionManager) send_packet(p Packet) {
-	println(p)
+	println('SESSION MANAGER SEND PACKET $p')
 	s.socket.send(p) or { panic(err) }
 }
 

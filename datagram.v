@@ -6,6 +6,10 @@ module vraklib
 // might be routed differently, and might arrive in any order.
 // Packet delivery is not guaranteed.
 struct Datagram {
+mut:
+	packet_pair     bool
+	continuous_send bool
+	needs_b_and_as    bool
 pub mut:
 	p               Packet
 	packet_id       byte
@@ -22,14 +26,20 @@ fn (c Datagram) get_total_length() u32 {
 }
 
 fn (mut c Datagram) decode() {
-	c.packet_id = c.p.buffer.get_byte()
+	flags := c.p.buffer.get_byte()
+	c.packet_pair = (flags & bitflag_packet_pair) != 0
+	c.continuous_send = (flags & bitflag_continuous_send) != 0
+	c.needs_b_and_as = (flags & bitflag_needs_b_and_as) != 0
+
 	c.sequence_number = c.p.buffer.get_ltriad()
+
 	c.packets = encapsulated_packet_from_binary(c.p)
+	println(c)
+	//panic('a')
 }
 
-fn (mut c Datagram) encode() {
-	c.p.buffer.length = c.get_total_length()
-	c.p.buffer.buffer = [byte(0)].repeat(int(c.get_total_length()))
+fn (mut c Datagram) encode(mut b ByteBuffer) {
+	c.p.buffer = new_bytebuffer([]byte{len:int(c.get_total_length())})//TODO check if this can be removed
 	c.p.buffer.put_byte(byte(bitflag_valid) | c.packet_id)
 	c.p.buffer.put_ltriad(c.sequence_number)
 	for internal_packet in c.packets {

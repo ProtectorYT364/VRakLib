@@ -9,6 +9,8 @@ const (
 	reliability_unreliable_with_ack_receipt       = 0x05
 	reliability_reliable_with_ack_receipt         = 0x06
 	reliability_reliable_ordered_with_ack_receipt = 0x07
+	
+	splitflag = 0x10
 )
 
 const (

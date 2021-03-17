@@ -94,7 +94,8 @@ fn new_session(session_manager SessionManager, address net.Addr, client_id u64, 
 
 fn (mut s Session) update() {
 	println("SESSION UPDATE")
-	diff := s.highest_seq_number - s.window_start + u32(1)
+	return
+	/* diff := s.highest_seq_number - s.window_start + u32(1)
 	assert diff > u32(0)
 	if diff > u32(0) {// warning: comparison of unsigned expression >= 0 is always true [-Wtype-limits]
 		s.window_start += diff
@@ -116,11 +117,11 @@ fn (mut s Session) update() {
 			}
 		}
 	}
-	s.send_queue()
+	s.send_queue() */
 }
 
 fn (mut s Session) send_datagram(datagram Datagram) {
-	println("SESSION SEND DATAGRAM")
+	println("SESSION SEND DATAGRAM $datagram")
 	mut d := datagram
 	if datagram.sequence_number != u32(-1) {
 		s.recovery_queue.delete(datagram.sequence_number.str())
@@ -129,22 +130,24 @@ fn (mut s Session) send_datagram(datagram Datagram) {
 	s.send_seq_number++
 	s.recovery_queue[d.sequence_number.str()] = datagram
 	// d,
+	d.encode(mut d.p.buffer)
 	println(d)
 	s.send_packet(d.p)
 }
 
-fn (s Session) send_packet(p Packet) {
-	println("SESSION SEND PACKET")
-	mut pp := p
-	pp.address = s.address
+fn (s Session) send_packet(_p Packet) {
+	println("SESSION SEND PACKET $_p")
+	mut p := _p
+	p.address = s.address
 	// r,
-	s.session_manager.send_packet(pp)
+	s.session_manager.send_packet(p)
 }
 
 fn (mut s Session) send_ping(reliability byte) {
-	packet := ConnectedPing{
+	mut packet := ConnectedPing{
 		client_timestamp: u64(s.session_manager.get_raknet_time_ms())
 	}
+	packet.encode(mut packet.p.buffer)
 	s.queue_connected_packet(packet.p, reliability, 0, priority_immediate)
 }
 
@@ -169,6 +172,7 @@ fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order
 
 fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 	println("ADD TO QUEUE")
+	//println('Packet: $packet Flags: $flags')
 	mut p := packet
 	priority := flags & 0x07
 	if p.need_ack && p.message_index != u32(-1) {
@@ -177,7 +181,8 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 	}
 	length := s.send_queue_data.get_total_length()
 	if u32(length) + p.get_length() > u32(s.mtu_size - u16(36)) {
-		s.send_queue()
+		println('too long')
+		//s.send_queue()
 	}
 	if p.need_ack {
 		s.send_queue_data.packets << p
@@ -186,12 +191,13 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 		s.send_queue_data.packets << p
 	}
 	if priority == priority_immediate {
-		s.send_queue()
+		println('prio immediate')
+		//s.send_queue()
 	}
 }
 
 fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags byte) {
-	println("ADD ENCAPSULATED TO QUEUE")
+	println("ADD ENCAPSULATED TO QUEUE $packet")
 	mut p := packet
 	p.need_ack = (flags & 0x09) != 0
 	println(p.need_ack)
@@ -249,9 +255,9 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 }
 
 fn (mut s Session) handle_packet(packet Datagram) {
-	println("HANDLE DATAGRAM PACKET")
 	mut p := packet
 	p.decode()
+	println("HANDLE DATAGRAM PACKET $p")
 	if u32(p.sequence_number) < s.window_start ||
 		u32(p.sequence_number) > s.window_end || p.sequence_number.str() in s.ack_queue {
 		// Received duplicate or out-of-window packet
@@ -406,13 +412,17 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 					p: new_packet_from_bytebuffer(buf, s.address)
 				}
 				connection.decode(mut buf)
+				println(connection)
 				mut accepted := ConnectionRequestAccepted{
 					p: new_packet([]byte{len:int(s.mtu_size)}, s.address)
 					request_timestamp: connection.request_timestamp
 					accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
+					client_address: s.address
+					system_addresses: [s.address]
 				}
 				accepted.encode(mut accepted.p.buffer)
-				accepted.p.address = connection.p.address
+				//accepted.p.address = connection.p.address
+				println(accepted)
 				s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
 			} else if pid == id_new_incoming_connection {
 				mut connection := NewIncomingConnection{

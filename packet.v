@@ -61,14 +61,15 @@ fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
 println('FROM BINARY $p')
 	mut packets := []EncapsulatedPacket{}
 	mut packet := p
-	for packet.buffer.position < packet.buffer.length {
+	for packet.buffer.position < packet.buffer.length {//todo add feof to binarystream: !feof
 		mut internal_packet := EncapsulatedPacket{}
 		flags := packet.buffer.get_byte()
+		println('flags: $flags')
 		internal_packet.reliability = (flags & 0xE0) >> 5
-		internal_packet.has_split = (flags & 0x10) > 0
-		length := int(math.ceil(f32(packet.buffer.get_ushort()) / f32(8)))
+		internal_packet.has_split = (flags & splitflag) != 0
+		length := packet.buffer.get_ushort()/8
 		internal_packet.length = u16(length)
-		if internal_packet.reliability > reliability_unreliable {
+		//if length 0: error
 			if reliability_is_reliable(internal_packet.reliability) {
 				internal_packet.message_index = packet.buffer.get_ltriad()
 			}
@@ -77,29 +78,16 @@ println('FROM BINARY $p')
 			}
 			if reliability_is_sequenced_or_ordered(internal_packet.reliability) {
 				internal_packet.order_index = packet.buffer.get_ltriad()
-				// Order channel, we don't care about this.
-				//internal_packet.order_channel =
-				//_ = packet.buffer.get_byte()
 				internal_packet.order_channel = packet.buffer.get_byte()
 			}
-		}
 		if internal_packet.has_split {
 			internal_packet.split_count = u32(packet.buffer.get_int())//TODO check if this needs to be uint
 			internal_packet.split_id = u16(packet.buffer.get_short())//TODO check if this needs to be ushort
 			internal_packet.split_index = u32(packet.buffer.get_int())//TODO check if this needs to be uint
 		}
-		internal_packet.buffer = packet.buffer.get_bytes(&length)
-		//packets << internal_packet
-		println('length: ${internal_packet.length}')
-		println('reliability: ${internal_packet.reliability}')
-		println('has_split: ${internal_packet.has_split}')
-		println('message_index: ${internal_packet.message_index}')
-		println('sequence_index: ${internal_packet.sequence_index}')
-		println('order_index: ${internal_packet.order_index}')
-		println('order_channel: ${internal_packet.order_channel}')
-		println('split_count: ${internal_packet.split_count}')
-		println('split_id: ${internal_packet.split_id}')
-		println('split_index: ${internal_packet.split_index}')
+		internal_packet.buffer = packet.buffer.get_bytes(length)
+		println(internal_packet)
+		packets << internal_packet
 	}
 	return packets
 }

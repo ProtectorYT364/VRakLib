@@ -6,7 +6,7 @@ struct ConnectionRequestAccepted {
 mut:
 	p                  Packet
 	client_address     net.Addr
-	system_addresses   [20]net.Addr
+	system_addresses   [/* 20 */]net.Addr
 	request_timestamp  u64
 	accepted_timestamp u64
 }
