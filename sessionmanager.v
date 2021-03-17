@@ -55,7 +55,6 @@ fn (mut s SessionManager) receive_packet() {
 			if (pid & bitflag_ack) != 0 {
 				ack_id := packet.buffer.get_int()
 				println('ack $pid $ack_id')
-				panic('ded')
 			} else if (pid & bitflag_nak) != 0 {
 				println('nack $pid')
 				// NACK
@@ -183,5 +182,6 @@ fn (mut s SessionManager) open_session(session Session) {
 }
 
 fn (mut s SessionManager) handle_encapsulated(session Session, packet EncapsulatedPacket) {
+	println('SM HANDLE ENCAP $packet')
 	s.server.handle_encapsulated(session.internal_id.str(), packet, priority_normal)
 }

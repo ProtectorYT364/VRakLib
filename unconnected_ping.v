@@ -12,8 +12,9 @@ pub mut:
 pub fn (mut r UnConnectedPing) encode(mut b ByteBuffer) {
 	b.put_byte(id_unconnected_ping)
 	b.put_ulong(r.send_timestamp)
-	b.put_bytes(get_packet_magic(), raknet_magic_length) // TODO check method
+	b.put_bytes(get_packet_magic()) // TODO check method
 	b.put_ulong(r.client_guid)
+	b.trim()
 }
 
 pub fn (mut r UnConnectedPing) decode(mut b ByteBuffer) {

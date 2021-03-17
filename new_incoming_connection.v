@@ -19,6 +19,7 @@ fn (mut r NewIncomingConnection) encode(mut b ByteBuffer) {
 	}
 	b.put_ulong(r.request_timestamp)
 	b.put_ulong(r.accepted_timestamp)
+	b.trim()
 }
 
 fn (mut r NewIncomingConnection) decode(mut b ByteBuffer) {

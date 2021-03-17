@@ -11,11 +11,12 @@ mut:
 
 fn (mut r OpenConnectionRequest1) encode(mut b ByteBuffer) {
 	b.put_byte(id_open_connection_request1)
-	b.put_bytes(get_packet_magic(), get_packet_magic().len) // TODO check method
+	b.put_bytes(get_packet_magic()) // TODO check method
 	b.put_byte(r.protocol)
 	len := int(r.mtu_size - b.len() + 28)
 	arr := []byte{len: len}
-	b.put_bytes(arr, len)
+	b.put_bytes(arr)
+	//b.trim()
 }
 
 fn (mut r OpenConnectionRequest1) decode(mut b ByteBuffer) {

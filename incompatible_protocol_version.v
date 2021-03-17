@@ -12,8 +12,9 @@ mut:
 fn (mut r IncompatibleProtocolVersion) encode(mut b ByteBuffer) {
 	b.put_byte(id_incompatible_protocol_version)
 	b.put_byte(r.protocol)
-	b.put_bytes(get_packet_magic(), raknet_magic_length) // TODO check method
+	b.put_bytes(get_packet_magic()) // TODO check method
 	b.put_ulong(r.server_guid)
+	b.trim()
 }
 
 fn (mut r IncompatibleProtocolVersion) decode(mut b ByteBuffer) {

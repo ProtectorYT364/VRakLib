@@ -14,10 +14,11 @@ mut:
 
 fn (mut r OpenConnectionRequest2) encode(mut b ByteBuffer) {
 	b.put_byte(id_open_connection_request2)
-	b.put_bytes(get_packet_magic(), get_packet_magic().len) // TODO check method
+	b.put_bytes(get_packet_magic()) // TODO check method
 	b.put_address(r.server_address)
 	b.put_ushort(r.mtu_size) // todo u16 or i16?
 	b.put_ulong(r.client_guid)
+	b.trim()
 }
 
 fn (mut r OpenConnectionRequest2) decode(mut b ByteBuffer) {

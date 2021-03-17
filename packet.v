@@ -11,6 +11,9 @@ const (
 	bitflag_packet_pair     = 0x10
 	bitflag_continuous_send = 0x08
 	bitflag_needs_b_and_as  = 0x04
+
+	flag_datagram_ack  = 0xc0
+	flag_datagram_nack = 0xa0
 )
 
 pub struct Packet {
@@ -57,18 +60,15 @@ fn get_packet_magic() []byte {
 		0x34, 0x56, 0x78]
 }
 
-fn encapsulated_packet_from_binary(p Packet) []EncapsulatedPacket {//AKA "read"
-println('FROM BINARY $p')
-	mut packets := []EncapsulatedPacket{}
-	mut packet := p
-	for packet.buffer.position < packet.buffer.length {//todo add feof to binarystream: !feof
+fn  (mut packet Packet) from_binary() EncapsulatedPacket {//AKA "read"
+println('FROM BINARY $packet')
 		mut internal_packet := EncapsulatedPacket{}
 		flags := packet.buffer.get_byte()
-		println('flags: $flags')
 		internal_packet.reliability = (flags & 0xE0) >> 5
 		internal_packet.has_split = (flags & splitflag) != 0
-		length := packet.buffer.get_ushort()/8
-		internal_packet.length = u16(length)
+		if packet.buffer.feof(){panic('not enough data')}
+		mut length := math.ceil(packet.buffer.get_ushort()/8)
+		println('length: $length')
 		//if length 0: error
 			if reliability_is_reliable(internal_packet.reliability) {
 				internal_packet.message_index = packet.buffer.get_ltriad()
@@ -85,24 +85,24 @@ println('FROM BINARY $p')
 			internal_packet.split_id = u16(packet.buffer.get_short())//TODO check if this needs to be ushort
 			internal_packet.split_index = u32(packet.buffer.get_int())//TODO check if this needs to be uint
 		}
-		internal_packet.buffer = packet.buffer.get_bytes(length)
+		
+		internal_packet.buffer = packet.buffer.get_bytes(int(length))
 		println(internal_packet)
-		packets << internal_packet
-	}
-	return packets
+		return internal_packet
 }
 
 fn (p EncapsulatedPacket) to_binary() Packet {//AKA write
 println('TO BINARY $p')
 	mut packet := Packet{
-		buffer: new_bytebuffer([]byte{len:int(p.get_length())})
+		buffer: new_bytebuffer([]byte{len:default_buffer_size})
 	}
-	packet.buffer.put_byte(byte(p.reliability << 5 | (if p.has_split {
+	packet.buffer.put_byte(byte((p.reliability << 5) | (if p.has_split {
 		0x01
 	} else {
 		0x00
 	})))
-	packet.buffer.put_ushort(u16(p.length << u16(3)))
+	//packet.buffer.put_ushort(u16(p.buffer.len << 3))
+	packet.buffer.put_short(i16(p.buffer.len << 3))
 	if reliability_is_reliable(p.reliability) {
 		packet.buffer.put_ltriad(p.message_index)
 	}
@@ -112,14 +112,18 @@ println('TO BINARY $p')
 	if reliability_is_sequenced_or_ordered(p.reliability) {
 		packet.buffer.put_ltriad(p.order_index)
 		// Order channel, we don't care about this.
-		packet.buffer.put_byte(0)
+		packet.buffer.put_byte(byte(p.order_channel))
 	}
 	if p.has_split {
 		packet.buffer.put_int(int(p.split_count))//TODO check if this needs to be uint
 		packet.buffer.put_short(i16(p.split_id))//TODO check if this needs to be ushort
 		packet.buffer.put_int(int(p.split_index))//TODO check if this needs to be uint
 	}
-	packet.buffer.put_bytes(p.buffer, int(p.length))
+	//packet.buffer.put_bytes(p.buffer)
+	packet.buffer.put_bytes(p.buffer)
+	//println(packet.buffer)
+	packet.buffer.trim()
+	println(packet.buffer)
 	return packet
 }
 

@@ -29,9 +29,18 @@ pub fn (mut b ByteBuffer) len() u32 {
 	return b.length
 }
 
+pub fn (mut b ByteBuffer) feof() bool {
+	return !(b.position < b.length)
+}
+
 pub fn (mut b ByteBuffer) reset() {
 	b.rewind()
 	b.buffer = []byte{len:default_buffer_size}
+	b.length = u32(b.buffer.len)
+}
+
+pub fn (mut b ByteBuffer) trim() {
+	b.buffer = b.buffer[..b.position]
 	b.length = u32(b.buffer.len)
 }
 
@@ -47,16 +56,15 @@ pub fn (mut b ByteBuffer) put_byte(v byte) {
 	b.position++
 }
 
-pub fn (mut b ByteBuffer) put_bytes(bytes []byte, size int) {
+pub fn (mut b ByteBuffer) put_bytes(bytes []byte) {
+	size := bytes.len
 	assert b.position + u32(size) <= b.length
-	if size > 0 {
 		for i in 0..size {
 			unsafe {
 				b.buffer[b.position + u32(i)] = bytes[i]
 			}
 		}
 		b.position += u32(size)
-	}
 }
 
 pub fn (mut b ByteBuffer) put_char(c i8) {

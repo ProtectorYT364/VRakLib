@@ -13,6 +13,7 @@ fn (mut r ConnectionRequest) encode(mut b ByteBuffer) {
 	b.put_ulong(r.client_guid)
 	b.put_ulong(r.request_timestamp)
 	b.put_bool(r.secure)
+	b.trim()
 }
 
 fn (mut r ConnectionRequest) decode(mut b ByteBuffer) {

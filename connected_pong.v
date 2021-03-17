@@ -11,6 +11,7 @@ pub fn (mut r ConnectedPong) encode(mut b ByteBuffer) {
 	b.put_byte(id_connected_pong)
 	b.put_ulong(r.client_timestamp)
 	b.put_ulong(r.server_timestamp)
+	b.trim()
 }
 
 pub fn (mut r ConnectedPong) decode(mut b ByteBuffer) {

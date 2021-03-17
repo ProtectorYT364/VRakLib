@@ -12,10 +12,11 @@ mut:
 
 fn (mut r OpenConnectionReply1) encode(mut b ByteBuffer) {
 	b.put_byte(id_open_connection_reply1)
-	b.put_bytes(get_packet_magic(), get_packet_magic().len) // TODO check method
+	b.put_bytes(get_packet_magic()) // TODO check method
 	b.put_ulong(r.server_guid)
 	b.put_bool(r.secure)
 	b.put_ushort(r.mtu_size) // todo u16 or i16?
+	b.trim()
 }
 
 fn (mut r OpenConnectionReply1) decode(mut b ByteBuffer) {
