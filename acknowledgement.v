@@ -18,7 +18,7 @@ pub fn (mut r Ack) encode(mut b ByteBuffer) {
 		return
 	}
 
-	mut stream := new_bytebuffer([]byte{len:1492})//TODO without len
+	mut stream := new_bytebuffer([]byte{len:default_buffer_size})//TODO without len
 
 	mut pointer := 1
 	mut first_packet := r.packets[0]
@@ -62,6 +62,7 @@ pub fn (mut r Ack) encode(mut b ByteBuffer) {
 
 	b.put_short(i16(interval_count))
 	//b.put_bytes(stream.buffer)
+	stream.trim()
 	b.put_bytes(stream.buffer)
 	b.trim()
 }

@@ -18,7 +18,11 @@ fn (mut r ConnectionRequest) encode(mut b ByteBuffer) {
 
 fn (mut r ConnectionRequest) decode(mut b ByteBuffer) {
 	//b.get_byte()
+	println(r.p)
 	r.client_guid = b.get_ulong()
+	println(r.client_guid)
 	r.request_timestamp = b.get_ulong()
+	println(r.request_timestamp)
 	r.secure = b.get_bool()
+	println(r.secure)
 }

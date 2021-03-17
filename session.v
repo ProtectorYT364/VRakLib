@@ -164,7 +164,7 @@ fn (mut s Session) send_queue() {
 fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order_channel int, flag byte) {
 	mut encapsulated := EncapsulatedPacket{
 		buffer: packet.buffer.buffer
-		length: u16(packet.buffer.length)
+		length: u16(packet.buffer.len())
 		reliability: reliability
 		order_channel: order_channel
 	}
@@ -261,7 +261,7 @@ fn (mut s Session) handle_packet(packet Datagram) {
 	mut ackpks := []u32
 	ackpks << p.sequence_number
 	mut ack := Ack{
-		p: new_packet([]byte{len:1492}, s.address)//TODO remove
+		p: new_packet([]byte{len:int(s.mtu_size)}, s.address)//TODO remove
 		packets:ackpks
 		}
 		println(ack)
@@ -412,6 +412,7 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 
 fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 	mut buf := new_bytebuffer(packet.buffer)
+	println(buf)
 	unsafe {
 		pid := buf.get_byte()
 	println('Encapsulated, $pid')
@@ -421,14 +422,15 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				mut connection := ConnectionRequest{
 					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				connection.decode(mut buf)
+				println(connection.p.buffer)
+				connection.decode(mut connection.p.buffer)
 				println(connection)
 				mut accepted := ConnectionRequestAccepted{
 					p: new_packet([]byte{len:int(s.mtu_size)}, s.address)
 					request_timestamp: connection.request_timestamp
 					accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
 					client_address: s.address
-					system_addresses: [s.address]
+					system_addresses: [s.session_manager.server.address]
 				}
 				accepted.encode(mut accepted.p.buffer)
 				//accepted.p.address = connection.p.address
@@ -438,13 +440,13 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				mut connection := NewIncomingConnection{
 					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				connection.decode(mut buf)
+				connection.decode(mut connection.p.buffer)
 				println(connection)
 				if connection.server_address.port == s.session_manager.socket.a.port || !s.session_manager.port_checking {
 					s.state = .connected
 					s.is_temporal = false
 					s.session_manager.open_session(s)
-					//s.send_ping(reliability_unreliable)
+					s.send_ping(reliability_unreliable)
 				}
 				println('NEW INCOMING CONNECTION')
 			}
@@ -452,14 +454,16 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				mut ping := ConnectedPing{
 					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				ping.decode(mut buf)
+				ping.decode(mut ping.p.buffer)
 				println(ping)
 		} else if pid == id_connected_pong {
 				mut pong := ConnectedPong{
 					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				pong.decode(mut buf)
+				pong.decode(mut pong.p.buffer)
 				println(pong)
+		} else{
+			println('Unknown $pid $packet')
 		}
 	} else if s.state == .connected {
 		s.session_manager.handle_encapsulated(s, packet)

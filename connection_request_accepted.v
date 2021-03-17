@@ -32,7 +32,7 @@ fn (mut r ConnectionRequestAccepted) decode(mut b ByteBuffer) {
 	for i := 0; i < 20; i++ {
 		r.system_addresses[i] = b.get_address()
 	println(r.system_addresses[i])
-		if b.length == 16 {
+		if b.remainder() == 16 {
 			break
 		}
 	}

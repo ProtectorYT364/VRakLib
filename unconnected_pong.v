@@ -29,6 +29,6 @@ pub fn (mut r UnConnectedPong) decode(mut b ByteBuffer) {
 	mut l := i16(b.get_short()) // todo u16 or i16?
 	println(l)
 	// data := []byte{ len: len }
-	l = i16(b.length - b.position) // todo u16 or i16?
+	l = i16(b.remainder()) // todo u16 or i16?
 	r.data = b.get_bytes(l)
 }

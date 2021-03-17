@@ -25,7 +25,7 @@ pub mut:
 struct EncapsulatedPacket {
 pub mut:
 	buffer         []byte
-	length         u16
+	length         u16//TODO maybe remove?
 	reliability    byte
 	has_split      bool
 	message_index  u32 //u24
@@ -66,10 +66,13 @@ println('FROM BINARY $packet')
 		flags := packet.buffer.get_byte()
 		internal_packet.reliability = (flags & 0xE0) >> 5
 		internal_packet.has_split = (flags & splitflag) != 0
-		if packet.buffer.feof(){panic('not enough data')}
+		if packet.buffer.feof(){error('not enough data')
+		return internal_packet
+		}
 		mut length := math.ceil(packet.buffer.get_ushort()/8)
-		println('length: $length')
+		internal_packet.length = u16(length)
 		//if length 0: error
+		if packet.buffer.remainder() > 3{
 			if reliability_is_reliable(internal_packet.reliability) {
 				internal_packet.message_index = packet.buffer.get_ltriad()
 			}
@@ -85,9 +88,14 @@ println('FROM BINARY $packet')
 			internal_packet.split_id = u16(packet.buffer.get_short())//TODO check if this needs to be ushort
 			internal_packet.split_index = u32(packet.buffer.get_int())//TODO check if this needs to be uint
 		}
-		
-		internal_packet.buffer = packet.buffer.get_bytes(int(length))
-		println(internal_packet)
+		}
+		if packet.buffer.remainder() < int(length){
+			println('remainder')
+			internal_packet.buffer = packet.buffer.get_bytes(packet.buffer.remainder()+1)
+		} else {
+			println('length $length')
+		internal_packet.buffer = packet.buffer.get_bytes(int(length)+1)
+		}
 		return internal_packet
 }
 
