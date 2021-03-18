@@ -1,11 +1,11 @@
 module vraklib
 
-interface Acknowledgement{
+/* interface Acknowledgement{
 mut:
 	packets []u32
 	//encode() ByteBuffer
 	//decode(mut p Packet)
-}
+} */
 
 struct Ack {
 mut:
@@ -17,17 +17,8 @@ mut:
 	packets []u32
 }
 
-pub fn (mut r Acknowledgement) encode() ByteBuffer {
+/* pub fn (mut r Acknowledgement) encode() ByteBuffer {
 	mut b := empty_buffer()
-	println('Acknowledgement of type:')
-	println(typeof(r).name)
-	//b.put_byte(r.get_id())
-	if r is Ack {
-	b.put_byte(flag_datagram_ack)}
-	else if r is Nak {
-	b.put_byte(flag_datagram_nack)}
-	else {
-	b.put_byte(flag_datagram_ack)}
 
 	mut packet_count := r.packets.len
 
@@ -110,7 +101,7 @@ pub fn (mut r Acknowledgement) decode(mut p Packet) {
 			count++
 		}
 	}
-}
+} */
 
 pub fn (mut r Nak) encode() ByteBuffer {
 	mut b := empty_buffer()
@@ -118,7 +109,8 @@ pub fn (mut r Nak) encode() ByteBuffer {
 	println(typeof(r).name)
 	//b.put_byte(r.get_id())
 	//if r is Ack {
-	b.put_byte(flag_datagram_nack)//}
+	b.put_byte(flag_datagram_nack)
+	//}
 	//else if r is Nak {
 	//b.put_byte(flag_datagram_nack)}
 	//else {
@@ -213,7 +205,8 @@ pub fn (mut r Ack) encode() ByteBuffer {
 	println(typeof(r).name)
 	//b.put_byte(r.get_id())
 	//if r is Ack {
-	b.put_byte(flag_datagram_ack)//}
+	b.put_byte(flag_datagram_ack)
+	//}
 	//else if r is Nak {
 	//b.put_byte(flag_datagram_nack)}
 	//else {

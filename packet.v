@@ -32,6 +32,7 @@ fn(p Packet) buffer_from_packet() ByteBuffer{
 fn empty_buffer() ByteBuffer{
 	return ByteBuffer{
 		endianness: Endianness.little
+		buffer: []byte{len:max_mtu_size}
 	}
 }
 
