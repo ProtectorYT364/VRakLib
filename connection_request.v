@@ -16,7 +16,7 @@ pub fn (r ConnectionRequest) encode() ByteBuffer {
 }
 pub fn (mut r ConnectionRequest) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	//b.get_byte()
+	b.get_byte()//pid
 	println(p)
 	r.client_guid = b.get_ulong()
 	println(r.client_guid)

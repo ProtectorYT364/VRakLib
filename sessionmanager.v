@@ -19,7 +19,8 @@ mut:
 }
 
 const(
-	server_guid = 1234567890
+	//server_guid = 1234567890
+	server_guid = 16966519777446909958
 )
 
 pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
@@ -44,6 +45,7 @@ pub fn (mut s SessionManager) start() {
 }
 
 fn (mut s SessionManager) process_incoming_packets() {
+	for {
 	mut p := s.socket.receive() or { return }
 	//TODO IP block check
 	mut pk := p.get_packet_from_match(s.session_exists(p.address))//also decodes
@@ -51,9 +53,11 @@ fn (mut s SessionManager) process_incoming_packets() {
 
 	//raw packet function
 
-	if pk.has_magic(){
+	if p.has_magic(){
 		s.handle_unconnected_message(pk, p)
+	println('test')
 	}else{
+	println('pog')
 		if !s.session_exists(p.address){ return}
 		mut session := s.get_session_by_address(p.address)
 		match pk{
@@ -69,14 +73,13 @@ fn (mut s SessionManager) process_incoming_packets() {
 			else{}
 		}
 	}
-}
+}}
 
 fn(mut s SessionManager) tick_sessions(){
 	for {
 		if s.shutdown {
 			return
 		}
-		return
 		//println('tick $s.current_tick')
 		//time.usleep(time.Duration.second /* / 80 */)//TODO fix
 		/* for index, session := range manager.Sessions {

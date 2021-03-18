@@ -22,6 +22,7 @@ pub fn (r NewIncomingConnection) encode() ByteBuffer {
 }
 pub fn (mut r NewIncomingConnection) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	r.server_address = b.get_address()
 	for i := 0; i < 20; i++ {
 		r.system_addresses[i] = b.get_address()

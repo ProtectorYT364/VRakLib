@@ -17,6 +17,7 @@ pub fn (r IncompatibleProtocolVersion) encode() ByteBuffer {
 }
 pub fn (mut r IncompatibleProtocolVersion) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	r.protocol = b.get_byte()
 	r.magic = b.get_bytes(16)
 	r.server_guid = b.get_ulong()

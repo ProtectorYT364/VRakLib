@@ -21,6 +21,7 @@ pub fn (r OpenConnectionRequest2) encode() ByteBuffer {
 }
 pub fn (mut r OpenConnectionRequest2) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	r.magic = b.get_bytes(get_packet_magic().len)
 	r.server_address = b.get_address()
 	r.mtu_size = b.get_ushort() // todo u16 or i16?

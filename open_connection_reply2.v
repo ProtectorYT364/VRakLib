@@ -23,6 +23,7 @@ pub fn (r OpenConnectionReply2) encode() ByteBuffer {
 }
 pub fn (mut r OpenConnectionReply2) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	r.magic = b.get_bytes(raknet_magic_length)
 	r.server_guid = b.get_ulong()
 	r.client_address = b.get_address()

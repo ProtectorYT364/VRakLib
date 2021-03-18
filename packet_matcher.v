@@ -6,11 +6,11 @@ fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
 	if has_session {
 		if header & 0x40 != 0 {
 			mut packet := Ack{}
-	//packet.decode(p)
+	packet.decode(p)
 	return packet
 		} else if header & 0x20 != 0 {
 			mut packet := Nak{}
-	//packet.decode(p)
+	packet.decode(p)
 	return packet
 		} else if header & 0x80 != 0 {
 			mut packet := Datagram{}
@@ -21,11 +21,13 @@ fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
 		match header {
 			id_unconnected_ping {
 				mut packet := UnConnectedPing{}
+				println('PKG MATCHER $packet')
 	packet.decode(mut p)
 	return packet
 			}
 			id_open_connection_request1 {
 				mut packet := OpenConnectionRequest1{}
+				println('PKG MATCHER #2 $packet')
 	packet.decode(mut p)
 	return packet
 			}
@@ -34,7 +36,8 @@ fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
 	packet.decode(mut p)
 	return packet
 			}
-			else {}
+			else {
+				println('PKG MATCHER FAILED')}
 		}
 	}
 	panic('ded')

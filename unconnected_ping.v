@@ -19,6 +19,7 @@ pub fn (r UnConnectedPing) encode() ByteBuffer {
 
 pub fn (mut r UnConnectedPing) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	r.send_timestamp = b.get_ulong()
 	r.magic = b.get_bytes(raknet_magic_length)
 	r.client_guid = b.get_ulong()

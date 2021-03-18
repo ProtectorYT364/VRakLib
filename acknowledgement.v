@@ -176,6 +176,7 @@ pub fn (mut r Nak) encode() ByteBuffer {
 
 pub fn (mut r Nak) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	packet_count := b.get_short()//ushort?
 	mut count := 0
 	for i := 0; i < packet_count && !b.feof() && count < 4096; i++ {
@@ -272,6 +273,7 @@ pub fn (mut r Ack) encode() ByteBuffer {
 
 pub fn (mut r Ack) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	packet_count := b.get_short()//ushort?
 	mut count := 0
 	for i := 0; i < packet_count && !b.feof() && count < 4096; i++ {

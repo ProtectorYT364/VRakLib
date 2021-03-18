@@ -9,10 +9,10 @@ fn(mut s SessionManager) handle_unconnected_message(packet_interface RaklibPacke
 	if packet_interface is UnConnectedPing{
 			s.handle_unconnected_ping(packet_interface,packet)
 		}
-		else if packet_interface is OpenConnectionRequest1{
+		 if packet_interface is OpenConnectionRequest1{
 			s.handle_open_connection_request1(packet_interface,packet)
 		}
-		else if packet_interface is OpenConnectionRequest2{
+		 if packet_interface is OpenConnectionRequest2{
 			s.handle_open_connection_request2(packet_interface,packet)
 		}
 }
@@ -24,7 +24,9 @@ fn(mut s SessionManager) handle_unconnected_ping(request UnConnectedPing, packet
 	pong.send_timestamp = u64(time.now().unix_time_milli())
 	pong.server_guid = server_guid//TODO from s.
 	pong.data = s.server.pong_data.update_pong_data().bytes()
-	b := pong.encode()
+	mut b := pong.encode()
+	b.trim()
+	println('encoded $b $pong')
 	s.send_packet(new_packet_from_bytebuffer(b,packet.address))
 }
 
@@ -35,7 +37,8 @@ fn(s SessionManager) handle_open_connection_request1(request OpenConnectionReque
 	reply.server_guid = server_guid//TODO from s.
 	reply.mtu_size = request.mtu_size
 	reply.secure = false//TODO from s.
-	b := reply.encode()
+	mut b := reply.encode()
+	b.trim()
 	s.send_packet(new_packet_from_bytebuffer(b,packet.address))
 }
 
@@ -54,7 +57,8 @@ fn(mut s SessionManager) handle_open_connection_request2(_request OpenConnection
 	reply.secure = false
 	reply.client_address = packet.address
 
-	b := reply.encode()
+	mut b := reply.encode()
+	b.trim()
 
 	//s.Sessions[fmt.Sprint(addr)] = NewSession(addr, request.MtuSize, manager)
 	s.create_session(packet.address, request.client_guid, request.mtu_size)

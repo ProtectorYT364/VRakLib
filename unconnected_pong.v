@@ -24,6 +24,7 @@ pub fn (mut r UnConnectedPong) encode() ByteBuffer {
 
 pub fn (mut r UnConnectedPong) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	r.send_timestamp = b.get_ulong()
 	r.server_guid = b.get_ulong()
 	r.magic = b.get_bytes(get_packet_magic().len)

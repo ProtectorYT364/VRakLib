@@ -19,6 +19,7 @@ pub fn (r OpenConnectionReply1) encode() ByteBuffer {
 }
 pub fn (mut r OpenConnectionReply1) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	r.magic = b.get_bytes(get_packet_magic().len)
 	r.server_guid = b.get_ulong()
 	r.secure = b.get_bool()

@@ -36,6 +36,7 @@ pub fn (r Datagram) encode() ByteBuffer {
 }
 pub fn (mut c Datagram) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
+	b.get_byte()//pid
 	flags := b.get_byte()
 	c.packet_pair = (flags & bitflag_packet_pair) != 0
 	c.continuous_send = (flags & bitflag_continuous_send) != 0
