@@ -4,14 +4,14 @@ import net
 
 struct ConnectionRequestAccepted {
 mut:
-	p                  Packet
 	client_address     net.Addr
 	system_addresses   [/* 20 */]net.Addr
 	request_timestamp  u64
 	accepted_timestamp u64
 }
 
-fn (mut r ConnectionRequestAccepted) encode(mut b ByteBuffer) {
+pub fn (r ConnectionRequestAccepted) encode() ByteBuffer {
+	mut b := empty_buffer()
 	b.put_byte(id_connection_request_accepted)
 	b.put_address(r.client_address)
 	b.put_short(i16(0))
@@ -22,10 +22,11 @@ fn (mut r ConnectionRequestAccepted) encode(mut b ByteBuffer) {
 	}
 	b.put_ulong(r.request_timestamp)
 	b.put_ulong(r.accepted_timestamp)
-	b.trim()
+	return b
 }
 
-fn (mut r ConnectionRequestAccepted) decode(mut b ByteBuffer) {
+pub fn (mut r ConnectionRequestAccepted) decode(mut p Packet) {
+	mut b := p.buffer_from_packet()
 	r.client_address = b.get_address()
 	println(r.client_address)
 	b.get_bytes(2)

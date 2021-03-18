@@ -4,7 +4,6 @@ import net
 
 struct OpenConnectionReply2 {
 mut:
-	p              Packet
 	// magic [16]byte
 	magic          []byte
 	server_guid    u64
@@ -12,18 +11,18 @@ mut:
 	mtu_size       u16
 	secure         bool
 }
-
-fn (mut r OpenConnectionReply2) encode(mut b ByteBuffer) {
+pub fn (r OpenConnectionReply2) encode() ByteBuffer {
+	mut b := empty_buffer()
 	b.put_byte(id_open_connection_reply2)
 	b.put_bytes(get_packet_magic()) // TODO check method
 	b.put_ulong(r.server_guid)
 	b.put_address(r.client_address)
 	b.put_ushort(r.mtu_size) // todo u16 or i16?
 	b.put_bool(r.secure)
-	b.trim()
+	return b
 }
-
-fn (mut r OpenConnectionReply2) decode(mut b ByteBuffer) {
+pub fn (mut r OpenConnectionReply2) decode(mut p Packet) {
+	mut b := p.buffer_from_packet()
 	r.magic = b.get_bytes(raknet_magic_length)
 	r.server_guid = b.get_ulong()
 	r.client_address = b.get_address()

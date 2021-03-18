@@ -7,6 +7,7 @@ const (
 	max_split_count = 4
 	channel_count   = 32
 	min_mtu_size    = 400
+	max_mtu_size	= 1492
 	window_size     = 2048 // should be mutable
 )
 
@@ -130,9 +131,9 @@ fn (mut s Session) send_datagram(datagram Datagram) {
 	s.send_seq_number++
 	s.recovery_queue[d.sequence_number.str()] = datagram
 	// d,
-	d.encode(mut d.p.buffer)
+	b := d.encode()
 	println(d)
-	s.send_packet(d.p)
+	s.send_packet(new_packet_from_bytebuffer(b,s.address))
 }
 
 fn (s Session) send_packet(_p Packet) {
@@ -145,11 +146,10 @@ fn (s Session) send_packet(_p Packet) {
 
 fn (mut s Session) send_ping(reliability byte) {
 	mut packet := ConnectedPing{
-		p: new_packet([]byte{len:int(s.mtu_size)}, s.address)//TODO remove
 		client_timestamp: u64(s.session_manager.get_raknet_time_ms())
 	}
-	packet.encode(mut packet.p.buffer)
-	s.queue_connected_packet(packet.p, reliability, 0, priority_immediate)
+	b := packet.encode()
+	s.queue_connected_packet(new_packet_from_bytebuffer(b,s.address), reliability, 0, priority_immediate)
 }
 
 fn (mut s Session) send_queue() {
@@ -163,8 +163,8 @@ fn (mut s Session) send_queue() {
 
 fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order_channel int, flag byte) {
 	mut encapsulated := EncapsulatedPacket{
-		buffer: packet.buffer.buffer
-		length: u16(packet.buffer.len())
+		buffer: packet.buffer
+		length: u16(packet.buffer.len)
 		reliability: reliability
 		order_channel: order_channel
 	}
@@ -256,18 +256,17 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 
 fn (mut s Session) handle_packet(packet Datagram) {
 	mut p := packet
-	p.decode()
+	//p.decode()//TODO fix
 	println("HANDLE DATAGRAM PACKET $p")
 	mut ackpks := []u32
 	ackpks << p.sequence_number
 	mut ack := Ack{
-		p: new_packet([]byte{len:int(s.mtu_size)}, s.address)//TODO remove
 		packets:ackpks
 		}
 		println(ack)
-	ack.encode(mut ack.p.buffer)
+	// b := ack.encode()
 	println('Sending ACK $ack')
-	s.send_packet(ack.p)
+	//s.send_packet(ack.p)//TODO
 	if u32(p.sequence_number) < s.window_start ||
 		u32(p.sequence_number) > s.window_end || p.sequence_number.str() in s.ack_queue {
 		// Received duplicate or out-of-window packet
@@ -420,27 +419,28 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 		if s.state == .connecting {
 			if pid == id_connection_request {
 				mut connection := ConnectionRequest{
-					p: new_packet_from_bytebuffer(buf, s.address)
+					//p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				println(connection.p.buffer)
-				connection.decode(mut connection.p.buffer)
+				p:= new_packet_from_bytebuffer(buf, s.address)
+				//println(connection.p.buffer)
+				connection.decode(mut p)
 				println(connection)
 				mut accepted := ConnectionRequestAccepted{
-					p: new_packet([]byte{len:int(s.mtu_size)}, s.address)
+					
 					request_timestamp: connection.request_timestamp
 					accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
 					client_address: s.address
 					system_addresses: [s.session_manager.server.address]
 				}
-				accepted.encode(mut accepted.p.buffer)
+				b := accepted.encode()
 				//accepted.p.address = connection.p.address
 				println(accepted)
-				s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
+				//s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
 			} else if pid == id_new_incoming_connection {
 				mut connection := NewIncomingConnection{
-					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				connection.decode(mut connection.p.buffer)
+				pkg:=new_packet_from_bytebuffer(buf, s.address)
+				connection.decode(mut pkg)
 				println(connection)
 				if connection.server_address.port == s.session_manager.socket.a.port || !s.session_manager.port_checking {
 					s.state = .connected
@@ -452,15 +452,15 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 			}
 		} else if pid == id_connected_ping {
 				mut ping := ConnectedPing{
-					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				ping.decode(mut ping.p.buffer)
+				b:=new_packet_from_bytebuffer(buf, s.address)
+				ping.decode(mut b)
 				println(ping)
 		} else if pid == id_connected_pong {
 				mut pong := ConnectedPong{
-					p: new_packet_from_bytebuffer(buf, s.address)
 				}
-				pong.decode(mut pong.p.buffer)
+				b:=new_packet_from_bytebuffer(buf, s.address)
+				pong.decode(mut b)
 				println(pong)
 		} else{
 			println('Unknown $pid $packet')

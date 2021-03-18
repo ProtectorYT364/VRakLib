@@ -4,14 +4,13 @@ import net
 
 struct NewIncomingConnection {
 mut:
-	p                  Packet
 	server_address     net.Addr
 	system_addresses   [20]net.Addr
 	request_timestamp  u64
 	accepted_timestamp u64
 }
-
-fn (mut r NewIncomingConnection) encode(mut b ByteBuffer) {
+pub fn (r NewIncomingConnection) encode() ByteBuffer {
+	mut b := empty_buffer()
 	b.put_byte(id_new_incoming_connection)
 	b.put_address(r.server_address)
 	for _, addr in r.system_addresses {
@@ -19,10 +18,10 @@ fn (mut r NewIncomingConnection) encode(mut b ByteBuffer) {
 	}
 	b.put_ulong(r.request_timestamp)
 	b.put_ulong(r.accepted_timestamp)
-	b.trim()
+	return b
 }
-
-fn (mut r NewIncomingConnection) decode(mut b ByteBuffer) {
+pub fn (mut r NewIncomingConnection) decode(mut p Packet) {
+	mut b := p.buffer_from_packet()
 	r.server_address = b.get_address()
 	for i := 0; i < 20; i++ {
 		r.system_addresses[i] = b.get_address()

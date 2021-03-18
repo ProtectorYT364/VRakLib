@@ -19,13 +19,9 @@ const (
 	id_user_packet_enum                  = 0x86
 )
 
-type RaklibPacket = ConnectedPing | ConnectedPong | ConnectionRequest | ConnectionRequestAccepted |
-	IncompatibleProtocolVersion | NewIncomingConnection | OpenConnectionReply1 | OpenConnectionReply2 |
-	OpenConnectionRequest1 | OpenConnectionRequest2 | UnConnectedPing | UnConnectedPong
+type RaklibPacketType =  RawPacket | ConnectedPing | ConnectedPong | ConnectionRequest | ConnectionRequestAccepted | IncompatibleProtocolVersion | NewIncomingConnection | OpenConnectionReply1 | OpenConnectionReply2 | OpenConnectionRequest1 | OpenConnectionRequest2 | UnConnectedPing | UnConnectedPong | /* Acknowledgement | */ Ack | Nak
 
-/*
-interface DataPacketHandler {
-    encode()
-    decode()
+interface RaklibPacket {
+    encode() ByteBuffer
+    decode(mut p Packet)
 }
-*/

@@ -2,23 +2,22 @@ module vraklib
 
 struct ConnectionRequest {
 mut:
-	p                 Packet
 	client_guid       u64
 	request_timestamp u64
 	secure            bool
 }
-
-fn (mut r ConnectionRequest) encode(mut b ByteBuffer) {
+pub fn (r ConnectionRequest) encode() ByteBuffer {
+	mut b := empty_buffer()
 	b.put_byte(id_connection_request)
 	b.put_ulong(r.client_guid)
 	b.put_ulong(r.request_timestamp)
 	b.put_bool(r.secure)
-	b.trim()
+	return b
 }
-
-fn (mut r ConnectionRequest) decode(mut b ByteBuffer) {
+pub fn (mut r ConnectionRequest) decode(mut p Packet) {
+	mut b := p.buffer_from_packet()
 	//b.get_byte()
-	println(r.p)
+	println(p)
 	r.client_guid = b.get_ulong()
 	println(r.client_guid)
 	r.request_timestamp = b.get_ulong()

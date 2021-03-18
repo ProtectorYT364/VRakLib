@@ -10,14 +10,14 @@ enum Endianness {
 
 struct ByteBuffer {
 pub mut:
-	endianness Endianness
+	endianness Endianness = .little
 	buffer     []byte
 //	length     u32//TODO remove
 	position   u32
 }
 
-pub fn new_bytebuffer(buffer []byte) &ByteBuffer {
-	return &ByteBuffer{
+pub fn new_bytebuffer(buffer []byte) ByteBuffer {
+	return ByteBuffer{
 		endianness: Endianness.little // Network order
 		buffer: buffer
 		//length: u32(buffer.len)

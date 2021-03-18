@@ -2,22 +2,21 @@ module vraklib
 
 struct IncompatibleProtocolVersion {
 mut:
-	p           Packet
 	// magic [16]byte
 	magic       []byte
 	protocol    byte
 	server_guid u64
 }
-
-fn (mut r IncompatibleProtocolVersion) encode(mut b ByteBuffer) {
+pub fn (r IncompatibleProtocolVersion) encode() ByteBuffer {
+	mut b := empty_buffer()
 	b.put_byte(id_incompatible_protocol_version)
 	b.put_byte(r.protocol)
 	b.put_bytes(get_packet_magic()) // TODO check method
 	b.put_ulong(r.server_guid)
-	b.trim()
+	return b
 }
-
-fn (mut r IncompatibleProtocolVersion) decode(mut b ByteBuffer) {
+pub fn (mut r IncompatibleProtocolVersion) decode(mut p Packet) {
+	mut b := p.buffer_from_packet()
 	r.protocol = b.get_byte()
 	r.magic = b.get_bytes(16)
 	r.server_guid = b.get_ulong()
