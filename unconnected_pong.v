@@ -27,7 +27,7 @@ pub fn (mut r UnConnectedPong) decode(mut p Packet) {
 	b.get_byte()//pid
 	r.send_timestamp = b.get_ulong()
 	r.server_guid = b.get_ulong()
-	r.magic = b.get_bytes(get_packet_magic().len)
+	r.magic = b.get_bytes(16)
 	mut l := i16(b.get_short()) // todo u16 or i16?
 	println(l)
 	// data := []byte{ len: len }

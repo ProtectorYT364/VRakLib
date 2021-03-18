@@ -2,15 +2,14 @@ module vraklib
 
 fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
 	header := p.buffer[0]
-	//mut packet := RawPacket{}
 	if has_session {
 		if header & 0x40 != 0 {
 			mut packet := Ack{}
-	packet.decode(p)
+	packet.decode(mut p)
 	return packet
 		} else if header & 0x20 != 0 {
 			mut packet := Nak{}
-	packet.decode(p)
+	packet.decode(mut p)
 	return packet
 		} else if header & 0x80 != 0 {
 			mut packet := Datagram{}
@@ -21,7 +20,6 @@ fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
 		match header {
 			id_unconnected_ping {
 				mut packet := UnConnectedPing{}
-				println('PKG MATCHER $packet')
 	packet.decode(mut p)
 	return packet
 			}
@@ -40,7 +38,9 @@ fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
 				println('PKG MATCHER FAILED')}
 		}
 	}
-	panic('ded')
+	mut packet := RawPacket{}
+	packet.decode(mut p)
+	return packet//todo return error() instead
 }
 
 fn (p RaklibPacket) get_id() int {

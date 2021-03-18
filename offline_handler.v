@@ -21,7 +21,7 @@ fn(mut s SessionManager) handle_unconnected_message(packet_interface RaklibPacke
 // An unconnected pong is sent back with the server's pong data.
 fn(mut s SessionManager) handle_unconnected_ping(request UnConnectedPing, packet Packet) {
 	mut pong := UnConnectedPong{}
-	pong.send_timestamp = u64(time.now().unix_time_milli())
+	pong.send_timestamp = request.send_timestamp
 	pong.server_guid = server_guid//TODO from s.
 	pong.data = s.server.pong_data.update_pong_data().bytes()
 	mut b := pong.encode()

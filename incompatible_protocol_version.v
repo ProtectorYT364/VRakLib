@@ -7,11 +7,12 @@ mut:
 	protocol    byte
 	server_guid u64
 }
-pub fn (r IncompatibleProtocolVersion) encode() ByteBuffer {
+pub fn (mut r IncompatibleProtocolVersion) encode() ByteBuffer {
 	mut b := empty_buffer()
 	b.put_byte(id_incompatible_protocol_version)
 	b.put_byte(r.protocol)
-	b.put_bytes(get_packet_magic()) // TODO check method
+	r.magic = get_packet_magic()
+	b.put_bytes(r.magic)
 	b.put_ulong(r.server_guid)
 	return b
 }

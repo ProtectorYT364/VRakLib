@@ -7,10 +7,11 @@ mut:
 	protocol byte
 	mtu_size u16
 }
-pub fn (r OpenConnectionRequest1) encode() ByteBuffer {
+pub fn (mut r OpenConnectionRequest1) encode() ByteBuffer {
 	mut b := empty_buffer()
 	b.put_byte(id_open_connection_request1)
-	b.put_bytes(get_packet_magic()) // TODO check method
+	r.magic = get_packet_magic()
+	b.put_bytes(r.magic)
 	b.put_byte(r.protocol)
 	len := int(r.mtu_size - b.len() + 28)
 	arr := []byte{len: len}
@@ -20,7 +21,7 @@ pub fn (r OpenConnectionRequest1) encode() ByteBuffer {
 pub fn (mut r OpenConnectionRequest1) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
 	b.get_byte()//pid
-	r.magic = b.get_bytes(get_packet_magic().len)
+	r.magic = b.get_bytes(16)
 	r.protocol = b.get_byte()
 	r.mtu_size = u16(b.len() + 1) + 28
 }
