@@ -23,5 +23,5 @@ pub fn (mut r OpenConnectionRequest1) decode(mut p Packet) {
 	b.get_byte()//pid
 	r.magic = b.get_bytes(16)
 	r.protocol = b.get_byte()
-	r.mtu_size = u16(b.len() + 1) + 28
+	r.mtu_size = u16(b.len()) + 28
 }
