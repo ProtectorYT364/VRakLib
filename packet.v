@@ -12,8 +12,8 @@ const (
 	bitflag_continuous_send = 0x08
 	bitflag_needs_b_and_as  = 0x04
 
-	flag_datagram_ack  = 0xc0
-	flag_datagram_nack = 0xa0
+	flag_datagram_ack       = 0xc0
+	flag_datagram_nack      = 0xa0
 )
 
 pub struct Packet {
@@ -22,29 +22,31 @@ pub mut:
 	address net.Addr
 }
 
-fn(p Packet) buffer_from_packet() ByteBuffer{
+fn (p Packet) buffer_from_packet() ByteBuffer {
 	return ByteBuffer{
-		endianness: Endianness.little
 		buffer: p.buffer
 	}
 }
 
-fn empty_buffer() ByteBuffer{
+fn empty_buffer() ByteBuffer {
 	return ByteBuffer{
-		endianness: Endianness.little
-		buffer: []byte{len:max_mtu_size}
+		buffer: []byte{len: max_mtu_size}
 	}
 }
 
 struct EncapsulatedPacket {
 pub mut:
-	buffer         []byte
-	length         u16//TODO maybe remove?
-	reliability    byte
-	has_split      bool
-	message_index  u32 //u24
-	sequence_index u32 //u24
-	order_index    u32 //u24
+	buffer []byte
+	length u16
+	// TODO maybe remove?
+	reliability   byte
+	has_split     bool
+	message_index u32
+	// u24
+	sequence_index u32
+	// u24
+	order_index u32
+	// u24
 	order_channel  int
 	split_count    u32
 	split_id       u16
@@ -53,14 +55,14 @@ pub mut:
 	identifier_ack int
 }
 
-fn new_packet_from_packet(packet Packet) Packet {//TODO remove
+fn new_packet_from_packet(packet Packet) Packet { // TODO remove
 	return new_packet(packet.buffer, packet.address)
 }
 
 pub fn new_packet(buffer []byte, addr net.Addr) Packet {
 	return Packet{
 		buffer: buffer
-	 	address: addr
+		address: addr
 	}
 }
 
@@ -83,56 +85,56 @@ fn (p RaklibPacket) has_magic() bool {
 	return true
 }
 
-fn  (mut packet Packet) from_binary() EncapsulatedPacket {//AKA "read"
-println('FROM BINARY $packet')
-		mut internal_packet := EncapsulatedPacket{}
-		mut b := new_bytebuffer(packet.buffer)
-		flags := b.get_byte()
-		internal_packet.reliability = (flags & 0xE0) >> 5
-		internal_packet.has_split = (flags & splitflag) != 0
-		if b.feof(){error('not enough data')
+fn (mut packet Packet) from_binary(_b ByteBuffer) EncapsulatedPacket { // AKA "read"
+	mut b := _b
+	println('FROM BINARY $b')
+	mut internal_packet := EncapsulatedPacket{}
+	flags := b.get_byte()
+	internal_packet.reliability = (flags & 224) >> 5
+
+	// internal_packet.reliability = (flags & 0xE0) >> 5
+	internal_packet.has_split = (flags & splitflag) != 0
+	if b.feof() {
+		error('no bytes left to read')
 		return internal_packet
-		}
-		mut length := math.ceil(b.get_ushort()/8)
-		internal_packet.length = u16(length)
-		//if length 0: error
-		if b.remainder() > 3{
-			if reliability_is_reliable(internal_packet.reliability) {
-				internal_packet.message_index = b.get_ltriad()
-			}
-			if reliability_is_sequenced(internal_packet.reliability) {
-				internal_packet.sequence_index = b.get_ltriad()
-			}
-			if reliability_is_sequenced_or_ordered(internal_packet.reliability) {
-				internal_packet.order_index = b.get_ltriad()
-				internal_packet.order_channel = b.get_byte()
-			}
-		if internal_packet.has_split {
-			internal_packet.split_count = u32(b.get_int())//TODO check if this needs to be uint
-			internal_packet.split_id = u16(b.get_short())//TODO check if this needs to be ushort
-			internal_packet.split_index = u32(b.get_int())//TODO check if this needs to be uint
-		}
-		}
-		if b.remainder() < int(length){
-			println('remainder')
-			internal_packet.buffer = b.get_bytes(b.remainder()+1)
-		} else {
-			println('length $length')
-		internal_packet.buffer = b.get_bytes(int(length)+1)
-		}
+	}
+	mut length := math.ceil(b.get_ushort() / 8)
+	internal_packet.length = u16(length)
+
+	println('length $length')
+	if length == 0 {
+		error('null encapsulated packet')
 		return internal_packet
+	}
+
+	if reliability_is_reliable(internal_packet.reliability) {
+		internal_packet.message_index = b.get_ltriad()
+	}
+	if reliability_is_sequenced(internal_packet.reliability) {
+		internal_packet.sequence_index = b.get_ltriad()
+	}
+	if reliability_is_sequenced_or_ordered(internal_packet.reliability) {
+		internal_packet.order_index = b.get_ltriad()
+		internal_packet.order_channel = b.get_byte()
+	}
+	if internal_packet.has_split {
+		internal_packet.split_count = u32(b.get_int()) // TODO check if this needs to be uint
+		internal_packet.split_id = u16(b.get_short()) // TODO check if this needs to be ushort
+		internal_packet.split_index = u32(b.get_int()) // TODO check if this needs to be uint
+	}
+
+	internal_packet.buffer = b.get_bytes(int(length))
+	return internal_packet
 }
 
-fn (p EncapsulatedPacket) to_binary() 	ByteBuffer {//AKA write
-println('TO BINARY $p')
-mut b := new_bytebuffer([]byte)
-	//mut packet := new_packet([]byte,net.Addr{'0.0.0.0',19132})//TODO GET IP
-	b.put_byte(byte((p.reliability << 5) | (if p.has_split {
-		0x01
-	} else {
-		0x00
-	})))
-	//b.put_ushort(u16(p.buffer.len << 3))
+fn (p EncapsulatedPacket) to_binary() ByteBuffer { // AKA write
+	println('TO BINARY $p')
+	mut b := new_bytebuffer([]byte{})
+
+	// mut packet := new_packet([]byte,net.Addr{'0.0.0.0',19132})//TODO GET IP
+	b.put_byte(byte((p.reliability << 5) | (if p.has_split { 0x01 } else { 0x00 })))
+
+	// b.put_ushort(u16(p.buffer.len << 3))
 	b.put_short(i16(p.buffer.len << 3))
 	if reliability_is_reliable(p.reliability) {
 		b.put_ltriad(p.message_index)
@@ -142,25 +144,39 @@ mut b := new_bytebuffer([]byte)
 	}
 	if reliability_is_sequenced_or_ordered(p.reliability) {
 		b.put_ltriad(p.order_index)
+
 		// Order channel, we don't care about this.
 		b.put_byte(byte(p.order_channel))
 	}
 	if p.has_split {
-		b.put_int(int(p.split_count))//TODO check if this needs to be uint
-		b.put_short(i16(p.split_id))//TODO check if this needs to be ushort
-		b.put_int(int(p.split_index))//TODO check if this needs to be uint
+		b.put_int(int(p.split_count)) // TODO check if this needs to be uint
+		b.put_short(i16(p.split_id)) // TODO check if this needs to be ushort
+		b.put_int(int(p.split_index)) // TODO check if this needs to be uint
 	}
-	//b.put_bytes(p.buffer)
+
+	// b.put_bytes(p.buffer)
 	b.put_bytes(p.buffer)
-	//println(b)
-	//b.trim()
+
+	// println(b)
+	// b.trim()
 	println(b)
-	//return packet
+
+	// return packet
 	return b
 }
 
 fn (e EncapsulatedPacket) get_length() u32 {
-    return u32(u16(3) + e.length + u16(if int(e.message_index) != -1 { 3 } else { 0 })
-     + u16(if int(e.order_index) != -1 { 4 } else { 0 })
-     + u16(if e.has_split { 10 } else { 0 }))
+	return u32(u16(3) + e.length + u16(if int(e.message_index) != -1 {
+		3
+	} else {
+		0
+	}) + u16(if int(e.order_index) != -1 {
+		4
+	} else {
+		0
+	}) + u16(if e.has_split {
+		10
+	} else {
+		0
+	}))
 }

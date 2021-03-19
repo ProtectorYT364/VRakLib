@@ -5,7 +5,7 @@ pub mut:
 	// magic [16]byte
 	magic          []byte
 	send_timestamp u64
-	client_guid    u64
+	client_guid    i64
 }
 
 pub fn (mut r UnConnectedPing) encode() ByteBuffer {
@@ -14,7 +14,7 @@ pub fn (mut r UnConnectedPing) encode() ByteBuffer {
 	b.put_ulong(r.send_timestamp)
 	r.magic = get_packet_magic()
 	b.put_bytes(r.magic)
-	b.put_ulong(r.client_guid)
+	b.put_long(r.client_guid)
 	return b
 }
 
@@ -23,5 +23,5 @@ pub fn (mut r UnConnectedPing) decode(mut p Packet) {
 	b.get_byte()//pid
 	r.send_timestamp = b.get_ulong()
 	r.magic = b.get_bytes(16)
-	r.client_guid = b.get_ulong()
+	r.client_guid = b.get_long()
 }

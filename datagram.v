@@ -44,9 +44,8 @@ pub fn (mut c Datagram) decode(mut p Packet) {
 
 	c.sequence_number = b.get_ltriad()
 
-	println(c)
-	//for !b.feof(){
-		//c.packets << b.from_binary()//TODO fix
-	//}
+	for !b.feof(){
+		c.packets << p.from_binary(b)
+	}
 	println(c)
 }

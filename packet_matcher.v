@@ -1,6 +1,7 @@
 module vraklib
 
-fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
+fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
+	mut p := pk
 	header := p.buffer[0]
 	if has_session {
 		if header & 0x40 != 0 {
@@ -21,17 +22,19 @@ fn (mut p Packet) get_packet_from_match(has_session bool) RaklibPacket {
 			id_unconnected_ping {
 				mut packet := UnConnectedPing{}
 	packet.decode(mut p)
+				println('PKG MATCHER #1 $packet')
 	return packet
 			}
 			id_open_connection_request1 {
 				mut packet := OpenConnectionRequest1{}
-				println('PKG MATCHER #2 $packet')
 	packet.decode(mut p)
+				println('PKG MATCHER #2 $packet')
 	return packet
 			}
 			id_open_connection_request2 {
 				mut packet := OpenConnectionRequest2{}
 	packet.decode(mut p)
+				println('PKG MATCHER #3 $packet')
 	return packet
 			}
 			else {

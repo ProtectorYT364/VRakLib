@@ -29,7 +29,7 @@ fn (s UdpSocket) receive()? Packet {
 }
 
 fn (s UdpSocket) send(p Packet) ?int {
-		println('Writing to address $p.address: $p.buffer')
+		//println('Writing to address $p.address: $p.buffer')
 		mut sock := s.s
 		mut error := sock.write_to(p.address, p.buffer) or { panic(err) }//sends thedata to the client C.sendto, returns int on error, none otherwise
 		if error == p.buffer.len{

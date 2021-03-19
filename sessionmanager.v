@@ -48,14 +48,13 @@ fn (mut s SessionManager) process_incoming_packets() {
 	for {
 	mut p := s.socket.receive() or { return }
 	//TODO IP block check
-	mut pk := p.get_packet_from_match(s.session_exists(p.address))//also decodes
-	println(pk)
+	pk := p.get_packet_from_match(s.session_exists(p.address))//also decodes
+	//println(pk)
 
 	//raw packet function
 
 	if p.has_magic(){
 		s.handle_unconnected_message(pk, p)
-	println('test')
 	}else{
 	println('pog')
 		if !s.session_exists(p.address){ return}
@@ -64,12 +63,12 @@ fn (mut s SessionManager) process_incoming_packets() {
 			Datagram{
 				//session.ReceiveWindow.AddDatagram(datagram)
 			}
-			/* Ack{
+			Ack{
 				//session.HandleACK(ack)
 			}
 			Nak{
 				//session.HandleNACK(nack)
-			} *///TODO
+			}//TODO
 			else{}
 		}
 	}
@@ -113,7 +112,6 @@ fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_si
 }
 
 fn (s SessionManager) send_packet(p Packet) {
-	println('SESSION MANAGER SEND PACKET $p')
 	s.socket.send(p) or { panic(err) }
 }
 
