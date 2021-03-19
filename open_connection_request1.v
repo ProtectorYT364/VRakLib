@@ -13,7 +13,7 @@ pub fn (mut r OpenConnectionRequest1) encode() ByteBuffer {
 	r.magic = get_packet_magic()
 	b.put_bytes(r.magic)
 	b.put_byte(r.protocol)
-	len := int(r.mtu_size - b.len() + 28)
+	len := int(r.mtu_size + 28)
 	arr := []byte{len: len}
 	b.put_bytes(arr)
 	return b
