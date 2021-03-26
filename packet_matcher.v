@@ -9,7 +9,7 @@ fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
 	packet.decode(mut p)
 	return packet
 		} else if header & 0x20 != 0 {
-			mut packet := Nak{}
+			mut packet := Nack{}
 	packet.decode(mut p)
 	return packet
 		} else if header & 0x80 != 0 {
@@ -48,8 +48,8 @@ fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
 
 fn (p RaklibPacket) get_id() int {
 	match p {
-		Ack { return flag_datagram_ack } // TODO ack vs nak
-		//Nak { return flag_datagram_nack } // TODO ack vs nak
+		Ack { return flag_datagram_ack } // TODO ack vs nack
+		//Nack { return flag_datagram_nack } // TODO ack vs nack
 		ConnectedPing { return id_connected_ping }
 		UnConnectedPing { return id_unconnected_ping }
 		//UnConnectedPingOpenConnections { return id_unconnected_ping_open_connections }

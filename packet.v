@@ -6,8 +6,9 @@ import net
 const (
 	raknet_magic_length     = 16
 	bitflag_valid           = 0x80
+	bitflag_datagram        = 0x80
 	bitflag_ack             = 0x40
-	bitflag_nak             = 0x20
+	bitflag_nack            = 0x20
 	bitflag_packet_pair     = 0x10
 	bitflag_continuous_send = 0x08
 	bitflag_needs_b_and_as  = 0x04
@@ -98,7 +99,7 @@ fn (mut packet Packet) from_binary(_b ByteBuffer) EncapsulatedPacket { // AKA "r
 		error('no bytes left to read')
 		return internal_packet
 	}
-	mut length := math.ceil(b.get_ushort() / 8)
+	mut length := swap16(u16(math.ceil(b.get_ushort() / 8)))
 	internal_packet.length = u16(length)
 
 	println('length $length')
@@ -124,6 +125,7 @@ fn (mut packet Packet) from_binary(_b ByteBuffer) EncapsulatedPacket { // AKA "r
 	}
 
 	internal_packet.buffer = b.get_bytes(int(length))
+	println(internal_packet)
 	return internal_packet
 }
 

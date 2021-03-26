@@ -12,7 +12,7 @@ mut:
 	packets []u32
 }
 
-struct Nak {
+struct Nack {
 mut:
 	packets []u32
 }
@@ -103,7 +103,7 @@ pub fn (mut r Acknowledgement) decode(mut p Packet) {
 	}
 } */
 
-pub fn (mut r Nak) encode() ByteBuffer {
+pub fn (mut r Nack) encode() ByteBuffer {
 	mut b := empty_buffer()
 	println('Acknowledgement of type:')
 	println(typeof(r).name)
@@ -111,7 +111,7 @@ pub fn (mut r Nak) encode() ByteBuffer {
 	//if r is Ack {
 	b.put_byte(flag_datagram_nack)
 	//}
-	//else if r is Nak {
+	//else if r is Nack {
 	//b.put_byte(flag_datagram_nack)}
 	//else {
 	//b.put_byte(flag_datagram_ack)}
@@ -174,7 +174,7 @@ pub fn (mut r Nak) encode() ByteBuffer {
 	return b
 }
 
-pub fn (mut r Nak) decode(mut p Packet) {
+pub fn (mut r Nack) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
 	b.get_byte()//pid
 	packet_count := b.get_short()//ushort?
@@ -208,7 +208,7 @@ pub fn (mut r Ack) encode() ByteBuffer {
 	//if r is Ack {
 	b.put_byte(flag_datagram_ack)
 	//}
-	//else if r is Nak {
+	//else if r is Nack {
 	//b.put_byte(flag_datagram_nack)}
 	//else {
 	//b.put_byte(flag_datagram_ack)}

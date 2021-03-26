@@ -52,7 +52,6 @@ mut:
 	disconnection_time              f32
 	is_temporal                     bool
 	// true
-	// packet_to_send
 	//packet_to_send                  []Datagram
 	datagram_queue                  DatagramQueue
 	is_active                       bool
@@ -260,10 +259,10 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 fn(mut s Session) receive_datagram(d Datagram){
 		s.last_update = time.now()
 		//s.SendACK(d.SequenceNumber)
-		s.handle_datagram(d)
+		s.handle_datagram2(d)
 	}
 
-fn(mut s Session) handle_datagram(d Datagram){
+fn(mut s Session) handle_datagram2(d Datagram){
 	for _, packet in d.packets {
 		if packet.has_split {
 			//s.HandleSplitEncapsulated(packet, datagram.Timestamp)
