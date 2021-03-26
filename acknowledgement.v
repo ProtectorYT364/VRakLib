@@ -188,8 +188,8 @@ pub fn (mut r Nak) decode(mut p Packet) {
 				end = start + 512
 			}
 
-			for pack := start; pack < end; pack++ {
-				r.packets << pack
+			for pack in start..end {
+				r.packets << u32(pack)
 				count++
 			}
 
@@ -285,8 +285,8 @@ pub fn (mut r Ack) decode(mut p Packet) {
 				end = start + 512
 			}
 
-			for pack := start; pack < end; pack++ {
-				r.packets << pack
+			for pack in start..end {
+				r.packets << u32(pack)
 				count++
 			}
 
