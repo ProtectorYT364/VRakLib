@@ -61,7 +61,11 @@ fn (mut s SessionManager) process_incoming_packets() {
 		mut session := s.get_session_by_address(p.address)
 		match pk{
 			Datagram{
-				//session.ReceiveWindow.AddDatagram(datagram)
+				if pk is Datagram{
+				println('Got datagram! $pk.packet_id:$pk.sequence_number')
+				session.receive_datagram(pk)
+				//session.ReceiveWindow.AddDatagram(pk)
+				}
 			}
 			Ack{
 				//session.HandleACK(ack)

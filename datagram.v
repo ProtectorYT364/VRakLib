@@ -24,7 +24,7 @@ fn (c Datagram) get_total_length() u32 {
 	return total_length
 }
 
-pub fn (r Datagram) encode() ByteBuffer {
+pub fn (mut r Datagram) encode() ByteBuffer {
 	mut b := empty_buffer()
 	b.put_byte(byte(bitflag_valid) | r.packet_id)
 	b.put_ltriad(r.sequence_number)
@@ -34,6 +34,7 @@ pub fn (r Datagram) encode() ByteBuffer {
 	}
 	return b
 }
+
 pub fn (mut c Datagram) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
 	b.get_byte()//pid

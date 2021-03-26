@@ -1,6 +1,7 @@
 module vraklib
 
 import net
+import time
 
 const (
 	max_split_size  = 128
@@ -47,7 +48,7 @@ mut:
 	// 0
 	send_seq_number                 u32 //u24
 	// 0
-	last_update                     f32
+	last_update                     time.Time
 	disconnection_time              f32
 	is_temporal                     bool
 	// true
@@ -255,6 +256,26 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 		s.add_to_queue(p, flags)
 	}
 }
+
+fn(mut s Session) receive_datagram(d Datagram){
+		s.last_update = time.now()
+		//s.SendACK(d.SequenceNumber)
+		s.handle_datagram(d)
+	}
+
+fn(mut s Session) handle_datagram(d Datagram){
+	for _, packet in d.packets {
+		if packet.has_split {
+			//s.HandleSplitEncapsulated(packet, datagram.Timestamp)
+			println('Handle split packet $packet')
+			//TODO FREITAG
+		} else {
+			//s.HandleEncapsulated(packet, datagram.Timestamp)
+			println('Handle non-split packet $packet')
+			//TODO FREITAG
+		}
+	}
+	}
 
 fn (mut s Session) handle_packet(packet Datagram) {
 	mut p := packet
