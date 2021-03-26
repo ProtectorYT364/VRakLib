@@ -38,7 +38,7 @@ fn (mut s SessionManager) handle_unconnected_ping(request UnConnectedPing, packe
 	pongd.decode(mut new_packet_from_bytebuffer(b,packet.address))
 	println(pong)
 	println(pongd)
-	assert pong == pongd
+	//assert pong == pongd
 }
 
 // handleOpenConnectionRequest1 handles an open connection request 1.
@@ -59,7 +59,7 @@ fn (s SessionManager) handle_open_connection_request1(request OpenConnectionRequ
 	pongd.decode(mut new_packet_from_bytebuffer(b,packet.address))
 	println(reply)
 	println(pongd)
-	assert reply == pongd
+	//assert reply == pongd
 }
 
 // handleOpenConnectionRequest2 handles an open connection request 2.
@@ -91,5 +91,5 @@ fn (mut s SessionManager) handle_open_connection_request2(request OpenConnection
 	pongd.decode(mut new_packet_from_bytebuffer(b,packet.address))
 	println(reply)
 	println(pongd)
-	assert reply == pongd
+	//assert reply == pongd
 }
