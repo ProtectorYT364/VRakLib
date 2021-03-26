@@ -52,13 +52,15 @@ mut:
 	is_temporal                     bool
 	// true
 	// packet_to_send
-	packet_to_send                  []Datagram
+	//packet_to_send                  []Datagram
+	datagram_queue                  DatagramQueue
 	is_active                       bool
 	// false
 	ack_queue                       map[string]u32
 	nack_queue                      map[string]u32
 	// maybe map[int]Datagram, key is seqNumber
-	recovery_queue                  map[string]Datagram
+	//recovery_queue                  map[string]Datagram
+	recovery_queue                  RecoveryQueue
 	split_packets                   map[string]TmpMapEncapsulatedPacket
 	need_ack                        map[string]TmpMapInt//u32?
 	send_queue_data                 Datagram
@@ -125,11 +127,11 @@ fn (mut s Session) send_datagram(datagram Datagram) {
 	println("SESSION SEND DATAGRAM $datagram")
 	mut d := datagram
 	if datagram.sequence_number != u32(-1) {
-		s.recovery_queue.delete(datagram.sequence_number.str())
+		s.recovery_queue.queue.delete(datagram.sequence_number.str())
 	}
 	d.sequence_number = s.send_seq_number
 	s.send_seq_number++
-	s.recovery_queue[d.sequence_number.str()] = datagram
+	s.recovery_queue.put(d.sequence_number,datagram)
 	// d,
 	b := d.encode()
 	println(d)
