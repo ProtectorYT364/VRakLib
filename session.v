@@ -475,14 +475,28 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				mut accepted := ConnectionRequestAccepted{
 					request_timestamp: connection.request_timestamp
 					//accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
-					accepted_timestamp: timestamp()
+					//accepted_timestamp: timestamp()
+					accepted_timestamp: connection.request_timestamp
 					client_address: s.address
 					system_addresses: [s.session_manager.server.address, sys_addr]
 				}
 				mut b := accepted.encode()
 				b.trim()
-				println(accepted)
 				s.queue_connected_packet(new_packet_from_bytebuffer(b, s.address), reliability_unreliable, 0, priority_immediate)
+				println(b.buffer.hex())
+				println(accepted)
+
+				//DEBUG
+				mut pongd := ConnectionRequestAccepted{}
+				mut baf := new_packet(b.buffer,s.address)
+				println('BAF $baf')
+	pongd.decode(mut baf)
+	println(pongd)
+	assert accepted.client_address.str() == pongd.client_address.str()
+	assert accepted.request_timestamp == pongd.request_timestamp
+	assert accepted.accepted_timestamp == pongd.accepted_timestamp
+	//TODO assert for server ips
+
 			} else if pid == id_new_incoming_connection {
 				mut connection := NewIncomingConnection{
 				}

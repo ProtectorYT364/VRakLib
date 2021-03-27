@@ -445,8 +445,8 @@ pub fn (mut b ByteBuffer) put_address(address net.Addr) {
 	numbers := address.saddr.split('.')
 	for num in numbers {
 		println(num)
-		println(byte(num.int() & 0xFF))
-		b.put_byte(byte(num.int() & 0xFF))
+		println(byte(~num.int() & 0xFF))
+		b.put_byte(byte(~num.int() & 0xFF))
 	}
 	b.put_ushort(u16(address.port))
 	// }

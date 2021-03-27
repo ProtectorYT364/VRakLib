@@ -31,10 +31,12 @@ pub fn (mut r ConnectionRequestAccepted) decode(mut p Packet) {
 	r.client_address = b.get_address()
 	println(r.client_address)
 	b.get_bytes(2)
-	for i := 0; i < 20; i++ {
-		r.system_addresses[i] = b.get_address()
-	println(r.system_addresses[i])
-		if b.remainder() == 16 {
+	for i in 0..20 {
+		//r.system_addresses[i] = b.get_address()
+		r.system_addresses << b.get_address()
+	println(r.system_addresses[r.system_addresses.len-1])
+		//if b.remainder() == 16 {
+		if b.remainder() <= 16 {
 			break
 		}
 	}

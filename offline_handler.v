@@ -107,6 +107,9 @@ fn (mut s SessionManager) handle_open_connection_request2(mut p Packet) {
 	/* mut pongd := OpenConnectionReply2{}
 	pongd.decode(mut new_packet_from_bytebuffer(b,p.address))
 	println(reply)
-	println(pongd) */
-	//assert reply == pongd
+	println(pongd)
+	assert reply.magic == pongd.magic
+	assert reply.server_guid == pongd.server_guid
+	assert reply.mtu_size == pongd.mtu_size
+	assert reply.secure == pongd.secure */
 }
