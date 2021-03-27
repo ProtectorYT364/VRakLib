@@ -86,7 +86,9 @@ fn (mut s SessionManager) handle(mut p Packet)? {
 	println('pog')
 	mut session := s.get_session_by_address(p.address) // online message
 	header_flags := b.get_byte()
+	println(b.buffer.hex())
 	if header_flags & bitflag_datagram == 0 { // ignore non datagram
+		println('non-datagram')
 		return
 	}
 
@@ -95,7 +97,7 @@ fn (mut s SessionManager) handle(mut p Packet)? {
 	} else if header_flags & bitflag_nack != 0 {
 		s.handle_nack(mut p)
 	} else { // handle datagram
-		s.handle_datagram(mut p)
+		session.handle_datagram(mut &b)
 	}
 }
 
@@ -113,13 +115,12 @@ fn (mut s SessionManager) handle_nack(mut p Packet) {
 	// TODO resend packets from recovery
 }
 
-fn (mut s SessionManager) handle_datagram(mut p Packet) {
-	mut d := Datagram{}
-	d.decode(mut p)
-	println('handle_datagram $d')
-	mut session := s.get_session_by_address(p.address) // online message
-	session.handle_packet(d)
-}
+/* fn (mut s Session) handle_datagram(mut b ByteBuffer) {
+	//mut d := Datagram{}
+	//d.decode(mut p)
+	println('handle_datagram $b')
+	s.handle_packet(mut b)
+} */
 
 fn (mut s SessionManager) tick_sessions() {
 	for !s.shutdown {

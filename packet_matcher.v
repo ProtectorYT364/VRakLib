@@ -1,6 +1,6 @@
 module vraklib
 
-fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
+/* fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
 	mut p := pk
 	header := p.buffer[0]
 	if has_session {
@@ -44,7 +44,7 @@ fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
 	mut packet := RawPacket{}
 	packet.decode(mut p)
 	return packet//todo return error() instead
-}
+} */
 
 fn (p RaklibPacket) get_id() int {
 	match p {

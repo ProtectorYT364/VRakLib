@@ -106,7 +106,7 @@ fn(mut queue DatagramQueue) window_size() u32 {
 
 struct RecoveryQueue {
 mut:
-	queue      map[u32]RaklibPacket
+	queue      map[u32]RaklibPacketType
 	timestamps map[u32]time.Time
 
 	ptr    int
@@ -114,25 +114,25 @@ mut:
 }
 
 const (
-	delayRecordCount = 40
+	delay_record_count = 40
 )
 
 // put puts a value at the index passed.
-fn (mut queue RecoveryQueue) put(index u32, value RaklibPacket) {
+fn (mut queue RecoveryQueue) put(index u32, value RaklibPacketType) {
 	queue.queue[index] = value
 	queue.timestamps[index] = time.now()
 }
 
 // take fetches a value from the index passed and removes the value from the queue. If the value was found, ok
 // is true.
-fn (mut queue RecoveryQueue) take(index u32) (RaklibPacket, bool) {
+fn (mut queue RecoveryQueue) take(index u32) (RaklibPacketType, bool) {
 	ok := index in queue.queue
 	val := queue.queue[index]
 	if ok {
 		queue.queue.delete(index.str())
 		queue.delays[queue.ptr] = time.now()-queue.timestamps[index]
 		queue.ptr++
-		if queue.ptr == delayRecordCount {
+		if queue.ptr == delay_record_count {
 			queue.ptr = 0
 		}
 		queue.timestamps.delete(index.str())
@@ -142,7 +142,7 @@ fn (mut queue RecoveryQueue) take(index u32) (RaklibPacket, bool) {
 
 // takeWithoutDelayAdd has the same functionality as take, but does not update the time it took for the
 // datagram to arrive.
-fn (mut queue RecoveryQueue) take_without_delay_add(index u32) (RaklibPacket, bool) {
+fn (mut queue RecoveryQueue) take_without_delay_add(index u32) (RaklibPacketType, bool) {
 	val := queue.queue[index]
 	if index in queue.queue {
 		queue.queue.delete(index.str())
@@ -160,7 +160,7 @@ fn (mut queue RecoveryQueue) timestamp(sequenceNumber u32) time.Time {
 }
 
 // AvgDelay returns the average delay between the putting of the value into the recovery queue and the taking
-// out of it again. It is measured over the last delayRecordCount values put in.
+// out of it again. It is measured over the last delay_record_count values put in.
 fn (mut queue RecoveryQueue) avg_delay() time.Duration {
 	mut average := i64(0)
 	mut records := 0

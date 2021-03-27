@@ -86,20 +86,20 @@ fn (p RaklibPacket) has_magic() bool {
 	return true
 }
 
-fn (mut packet Packet) from_binary(_b ByteBuffer) EncapsulatedPacket { // AKA "read"
-	mut b := _b
+fn (mut packet Packet) from_binary(mut b ByteBuffer) EncapsulatedPacket { // AKA "read"
+	//mut b := _b
 	println('FROM BINARY $b')
 	mut internal_packet := EncapsulatedPacket{}
 	flags := b.get_byte()
+	internal_packet.has_split = (flags & splitflag) != 0
 	internal_packet.reliability = (flags & 224) >> 5
 
-	// internal_packet.reliability = (flags & 0xE0) >> 5
-	internal_packet.has_split = (flags & splitflag) != 0
-	if b.feof() {
+	/* if b.feof() {
 		error('no bytes left to read')
 		return internal_packet
-	}
-	mut length := swap16(u16(math.ceil(b.get_ushort() / 8)))
+	} */
+	mut length := u16(math.ceil(b.get_ushort()))
+	length >>= 3
 	internal_packet.length = u16(length)
 
 	println('length $length')
@@ -118,7 +118,9 @@ fn (mut packet Packet) from_binary(_b ByteBuffer) EncapsulatedPacket { // AKA "r
 		internal_packet.order_index = b.get_ltriad()
 		internal_packet.order_channel = b.get_byte()
 	}
+
 	if internal_packet.has_split {
+		println('IS SPLIT')
 		internal_packet.split_count = u32(b.get_int()) // TODO check if this needs to be uint
 		internal_packet.split_id = u16(b.get_short()) // TODO check if this needs to be ushort
 		internal_packet.split_index = u32(b.get_int()) // TODO check if this needs to be uint
@@ -131,6 +133,9 @@ fn (mut packet Packet) from_binary(_b ByteBuffer) EncapsulatedPacket { // AKA "r
 
 fn (p EncapsulatedPacket) to_binary() ByteBuffer { // AKA write
 	println('TO BINARY $p')
+	if p.buffer.len > 0 {
+		return new_bytebuffer(p.buffer)
+	}
 	mut b := new_bytebuffer([]byte{})
 
 	// mut packet := new_packet([]byte,net.Addr{'0.0.0.0',19132})//TODO GET IP

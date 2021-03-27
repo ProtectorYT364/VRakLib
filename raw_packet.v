@@ -8,7 +8,7 @@ pub mut:
 	client_guid    u64
 }
 pub fn (r RawPacket) encode() ByteBuffer {
-	return new_bytebuffer([]byte)
+	return new_bytebuffer([]byte{})
 }
 
 pub fn (mut r RawPacket) decode(mut p Packet) {

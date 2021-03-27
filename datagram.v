@@ -12,7 +12,7 @@ mut:
 	needs_b_and_as    bool
 pub mut:
 	packet_id       byte
-	sequence_number u32 = -1
+	sequence_number U24
 	packets         []EncapsulatedPacket
 }
 
@@ -32,21 +32,24 @@ pub fn (mut r Datagram) encode() ByteBuffer {
 		packet := internal_packet.to_binary()
 		b.put_bytes(packet.buffer)
 	}
+	b.trim()
 	return b
 }
 
-pub fn (mut c Datagram) decode(mut p Packet) {
-	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
-	flags := b.get_byte()
-	c.packet_pair = (flags & bitflag_packet_pair) != 0
-	c.continuous_send = (flags & bitflag_continuous_send) != 0
-	c.needs_b_and_as = (flags & bitflag_needs_b_and_as) != 0
-
+pub fn (mut c Datagram) decode(mut b ByteBuffer) {
+	println(b.buffer.hex())
 	c.sequence_number = b.get_ltriad()
+	println(c.sequence_number)
+
+	/* header := b.get_byte()
+	println(header.hex())
+	c.packet_pair = (header & bitflag_packet_pair) != 0
+	c.continuous_send = (header & bitflag_continuous_send) != 0
+	c.needs_b_and_as = (header & bitflag_needs_b_and_as) != 0 */
 
 	for !b.feof(){
-		c.packets << p.from_binary(b)
+		mut p := Packet{}
+		c.packets << p.from_binary(mut b)
 	}
-	println(c)
+	//println(c)
 }

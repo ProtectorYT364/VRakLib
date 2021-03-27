@@ -62,6 +62,7 @@ fn (s SessionManager) handle_open_connection_request1(mut p Packet) {
 	println(reply.secure)
 	mut b := reply.encode()
 	b.trim()
+	println('SENDING $reply')
 	s.send_packet(new_packet_from_bytebuffer(b, p.address))
 	//DEBUG
 	/* mut pongd := OpenConnectionReply1{}
@@ -99,6 +100,7 @@ fn (mut s SessionManager) handle_open_connection_request2(mut p Packet) {
 	// s.Sessions[fmt.Sprint(addr)] = NewSession(addr, request.MtuSize, manager)
 	println('s.create_session $request.client_guid')
 	s.create_session(p.address, request.client_guid, u16(request.mtu_size))
+	println('SENDING $reply')
 	s.send_packet(new_packet_from_bytebuffer(b, p.address))
 
 	//DEBUG

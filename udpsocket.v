@@ -32,7 +32,7 @@ fn (s UdpSocket) send(p Packet) ?int {
 		mut sock := s.s
 		mut error := sock.write_to(p.address, p.buffer) or { panic(err) }//sends thedata to the client C.sendto, returns int on error, none otherwise
 		if error == p.buffer.len{
-		//println('Success')
+		println('Success')
 		return error
 		}else{
 		println('Failed')

@@ -123,25 +123,25 @@ fn (mut s Session) update() {
 	s.send_queue() */
 }
 
-fn (mut s Session) send_datagram(datagram Datagram) {
-	println("SESSION SEND DATAGRAM $datagram")
-	mut d := datagram
-	if datagram.sequence_number != u32(-1) {
-		s.recovery_queue.queue.delete(datagram.sequence_number.str())
+fn (mut s Session) send_datagram(mut d Datagram) {
+	println("SESSION SEND DATAGRAM $d")
+	//mut d := datagram
+	if d.sequence_number != u32(-1) {
+		s.recovery_queue.queue.delete(d.sequence_number.str())
 	}
 	d.sequence_number = s.send_seq_number
 	s.send_seq_number++
-	s.recovery_queue.put(d.sequence_number,datagram)
+	s.recovery_queue.put(d.sequence_number,d)
 	// d,
 	b := d.encode()
 	println(d)
-	s.send_packet(new_packet_from_bytebuffer(b,s.address))
+	s.send_packet(mut new_packet_from_bytebuffer(b,s.address))
 }
 
-fn (s Session) send_packet(_p Packet) {
-	println("SESSION SEND PACKET $_p")
-	mut p := _p
-	p.address = s.address
+fn (s Session) send_packet(mut p Packet) {//TODO change to RaklibPacket?
+	println("SESSION SEND PACKET $p")
+	//mut p := _p
+	//p.address = s.address
 	// r,
 	s.session_manager.send_packet(p)
 }
@@ -156,7 +156,7 @@ fn (mut s Session) send_ping(reliability byte) {
 
 fn (mut s Session) send_queue() {
 	if s.send_queue_data.packets.len > 0 {
-		s.send_datagram(s.send_queue_data)
+		s.send_datagram(mut s.send_queue_data)
 		s.send_queue_data = Datagram{
 			sequence_number: u32(-1)
 		}
@@ -183,17 +183,19 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 	}
 	length := s.send_queue_data.get_total_length()
 	if u32(length) + p.get_length() > u32(s.mtu_size - u16(36)) {
-		//println('too long')
+		println('too long')
 		s.send_queue()
 	}
 	if p.need_ack {
+		println('need ack')
 		s.send_queue_data.packets << p
 		p.need_ack = false
 	} else {
+		println('does not need ack')
 		s.send_queue_data.packets << p
 	}
 	if priority == priority_immediate {
-		//println('prio immediate')
+		println('prio immediate')
 		s.send_queue()
 	}
 }
@@ -218,7 +220,6 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 	if p.length > max_size {
 		//mut buffers := []//byte{}
 		mut buffers := [][]byte{}
-		println('FULL BUFFERS $buffers')
 		mut packet_buffers := p.buffer
 		for packet_buffers.len > 0 {
 			mut end := int(max_size)
@@ -228,6 +229,7 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 			packet_buffers = packet_buffers[end..]
 		}
 		split_id := s.split_id % 65536
+		println('FULL BUFFERS $buffers')
 		for count, buffer in buffers {
 			mut encapsulated_packet := EncapsulatedPacket{}
 			encapsulated_packet.split_id = u16(split_id)
@@ -259,36 +261,51 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 fn(mut s Session) receive_datagram(d Datagram){
 		s.last_update = time.now()
 		//s.SendACK(d.SequenceNumber)
-		s.handle_datagram2(d)
+	/* mut ack := Ack{
+		packets:[d.sequence_number]
+		}
+		println(ack)
+	 b := ack.encode()
+	println('Sending ACK $ack')
+	s.send_packet(ack.p)//TODO
+	*/
+		//s.handle_datagram(d)
 	}
 
 fn(mut s Session) handle_datagram2(d Datagram){
 	for _, packet in d.packets {
 		if packet.has_split {
-			//s.HandleSplitEncapsulated(packet, datagram.Timestamp)
 			println('Handle split packet $packet')
+			//s.HandleSplitEncapsulated(packet, datagram.Timestamp)
 			//TODO FREITAG
 		} else {
-			//s.HandleEncapsulated(packet, datagram.Timestamp)
 			println('Handle non-split packet $packet')
+			//s.HandleEncapsulated(packet, datagram.Timestamp)
 			//TODO FREITAG
 		}
 	}
 	}
 
-fn (mut s Session) handle_packet(packet Datagram) {
-	mut p := packet
+
+pub fn (mut s Session) handle_datagram(mut b ByteBuffer) {
+			mut d := Datagram{}
+			d.decode(mut b)
+	println('decoded datagram: $d')
+	s.handle_packet(mut d)
+}
+
+pub fn (mut s Session) handle_packet(mut p Datagram) {
 	//p.decode()//TODO fix
 	println("HANDLE DATAGRAM PACKET $p")
-	mut ackpks := []u32
+	mut ackpks := []u32{}
 	ackpks << p.sequence_number
 	mut ack := Ack{
 		packets:ackpks
 		}
-		println(ack)
-	// b := ack.encode()
+	mut b := ack.encode()
+	b.trim()
 	println('Sending ACK $ack')
-	//s.send_packet(ack.p)//TODO
+	s.send_packet(mut new_packet_from_bytebuffer(b,s.address))//TODO
 	if u32(p.sequence_number) < s.window_start ||
 		u32(p.sequence_number) > s.window_end || p.sequence_number.str() in s.ack_queue {
 		// Received duplicate or out-of-window packet
@@ -447,17 +464,25 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				//println(connection.p.buffer)
 				connection.decode(mut p)
 				println(connection)
-				mut accepted := ConnectionRequestAccepted{
-					
-					request_timestamp: connection.request_timestamp
-					accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
-					client_address: s.address
-					system_addresses: [s.session_manager.server.address]
+				saddr, port := net.split_address('127.0.0.1:$s.session_manager.server.address.port') or {
+					 println(err) 
+					return
+				} // ?
+				sys_addr := net.Addr{
+					saddr: saddr
+					port: port
 				}
-				b := accepted.encode()
-				//accepted.p.address = connection.p.address
+				mut accepted := ConnectionRequestAccepted{
+					request_timestamp: connection.request_timestamp
+					//accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
+					accepted_timestamp: timestamp()
+					client_address: s.address
+					system_addresses: [s.session_manager.server.address, sys_addr]
+				}
+				mut b := accepted.encode()
+				b.trim()
 				println(accepted)
-				//s.queue_connected_packet(accepted.p, reliability_unreliable, 0, priority_immediate)
+				s.queue_connected_packet(new_packet_from_bytebuffer(b, s.address), reliability_unreliable, 0, priority_immediate)
 			} else if pid == id_new_incoming_connection {
 				mut connection := NewIncomingConnection{
 				}

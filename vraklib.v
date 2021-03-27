@@ -8,7 +8,7 @@ pub struct VRakLib {
 pub mut:
 	address              net.Addr
 	session_manager      SessionManager
-	shutdown             bool = false
+	shutdown             bool
 	pong_data PongData
 }
 
