@@ -38,19 +38,28 @@ fn (s SessionManager) get_raknet_time_ms() i64 {
 }
 
 pub fn (mut s SessionManager) start(shared logger bstone.Log) {
-	s.shutdown = &logger.stop
-	println('Shutdown? $s.shutdown')
 	// TODO share sessions with main thread https://github.com/vlang/v/blob/master/doc/docs.md#shared-objects
 	mut threads := []thread{}
 	threads << go s.listen_socket()
 	threads << go s.tick_sessions()
 	threads.wait()
+	//s.stop()
+}
+
+pub fn (mut s SessionManager) stop() {
+	println('Stopping SessionManager')
+	s.shutdown = true
+	println('Shutdown listen socket')
+	s.socket.close()
 }
 
 fn (mut s SessionManager) listen_socket() {
-	for !s.shutdown {
+	for !s.server.shutdown {
 		// receive individual packets
 		mut p := s.socket.receive() or {
+			if s.server.shutdown{
+				break
+			}
 			println(err)
 			continue
 		}
@@ -126,7 +135,7 @@ fn (mut s SessionManager) handle_nack(mut p Packet) {
 } */
 
 fn (mut s SessionManager) tick_sessions() {
-	for !s.shutdown {
+	for !s.server.shutdown {
 		/*
 		if s.shutdown {
 			return
@@ -141,6 +150,7 @@ fn (mut s SessionManager) tick_sessions() {
 		*/
 		// s.current_tick++
 	}
+	println('Shutdown tick sessions')
 }
 
 fn (s SessionManager) get_session_by_address(address net.Addr) Session {

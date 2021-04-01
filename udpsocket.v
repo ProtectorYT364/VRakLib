@@ -22,7 +22,10 @@ fn (s UdpSocket) receive()? Packet {
 	bufsize := default_buffer_size
 	mut c := s.s//udpconn
 	mut buf := []byte{len: bufsize}
-	bytes_read, client_addr := c.read(mut buf) or { return error("could not read") }//addr is from recvfrom, client address
+	bytes_read, client_addr := c.read(mut buf) or { 
+		return err
+		//return error("could not read") 
+	}//addr is from recvfrom, client address
 	buf = buf[..bytes_read]//trim buffer
 	return Packet{buf, client_addr}
 }
@@ -40,5 +43,7 @@ fn (s UdpSocket) send(p Packet) ?int {
 }
 
 fn (mut s UdpSocket) close() {
-	s.s.close() or { panic(err) }
+	s.s.close() or { 
+		println(err)
+	}
 }

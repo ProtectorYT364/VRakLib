@@ -25,15 +25,21 @@ pub fn new_vraklib(address net.Addr) &VRakLib {//TODO pass server config for pon
 }
 
 pub fn (mut r VRakLib) start(shared logger bstone.Log) {
-	println('RakNet thread starting on $r.address')
-	r.shutdown = &logger.stop
-	println('Shutdown? $r.shutdown')
+	println('RakLib thread starting on $r.address')
 	socket := create_socket(r.address) or { panic(err) }
 
 	mut session_manager := new_session_manager(r, socket)
 	r.session_manager = session_manager
 	session_manager.start(shared logger)//TODO check if this blocks
-	println('Shutdown? $r.shutdown')
+	session_manager.stop()
+	println('Shutdown raklib? $r.shutdown')
+	r.stop()
+}
+
+pub fn (mut r VRakLib) stop() {
+	println('Shutting down RakLib')
+	r.shutdown = true
+	r.session_manager.stop()
 }
 
 // timestamp returns a timestamp in milliseconds.
