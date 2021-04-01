@@ -32,8 +32,8 @@ pub fn new_vraklib(shared config bstone.ServerConfig, shared logger bstone.Log) 
 }
 
 pub fn (mut r VRakLib) start() {
-	r.logger.log('RakLib thread starting on $r.address',.debug)
-	socket := create_socket(r.address, shared r.logger) or { panic(err) }
+	r.logger().log('RakLib thread starting on $r.address',.debug)
+	socket := create_socket(r.address, shared r.logger()) or { panic(err) }
 
 	mut session_manager := new_session_manager(r, socket)
 	r.session_manager = session_manager
@@ -43,7 +43,7 @@ pub fn (mut r VRakLib) start() {
 }
 
 pub fn (mut r VRakLib) stop() {
-	r.logger.log('Shutting down RakLib',.debug)
+	r.logger().log('Shutting down RakLib',.debug)
 	r.shutdown = true
 	r.session_manager.stop()
 }
@@ -51,4 +51,8 @@ pub fn (mut r VRakLib) stop() {
 // timestamp returns a timestamp in milliseconds.
 pub fn timestamp() u64 {
 	return time.now().unix_time_milli()
+}
+
+pub fn(s VRakLib) logger() shared bstone.Log{
+	return s.logger
 }
