@@ -12,7 +12,10 @@ pub mut:
 	pong_data PongData
 }
 
-pub fn new_vraklib(address net.Addr) &VRakLib {//TODO pass server config for pongdata
+pub fn new_vraklib(shared config bstone.ServerConfig) &VRakLib {//TODO pass server config for pongdata
+	address := rlock config{
+		config.addr
+	}
 	pongdata := PongData{
 		server_id: server_guid
 		port: address.port
