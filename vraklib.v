@@ -10,9 +10,11 @@ pub mut:
 	session_manager      SessionManager
 	shutdown             bool
 	pong_data PongData
+	config shared bstone.ServerConfig
+	logger shared bstone.Log
 }
 
-pub fn new_vraklib(shared config bstone.ServerConfig) &VRakLib {//TODO pass server config for pongdata
+pub fn new_vraklib(shared config bstone.ServerConfig, shared logger bstone.Log) &VRakLib {//TODO pass server config for pongdata
 	address := rlock config{
 		config.addr
 	}
@@ -23,24 +25,25 @@ pub fn new_vraklib(shared config bstone.ServerConfig) &VRakLib {//TODO pass serv
 	vr := &VRakLib{
 		address: address
 		pong_data: pongdata
+		config: config
+		logger: logger
 	}
 	return vr
 }
 
-pub fn (mut r VRakLib) start(shared logger bstone.Log) {
-	println('RakLib thread starting on $r.address')
-	socket := create_socket(r.address) or { panic(err) }
+pub fn (mut r VRakLib) start() {
+	r.logger.log('RakLib thread starting on $r.address',.debug)
+	socket := create_socket(r.address, shared r.logger) or { panic(err) }
 
 	mut session_manager := new_session_manager(r, socket)
 	r.session_manager = session_manager
-	session_manager.start(shared logger)//TODO check if this blocks
+	session_manager.start()//TODO check if this blocks
 	session_manager.stop()
-	println('Shutdown raklib? $r.shutdown')
 	r.stop()
 }
 
 pub fn (mut r VRakLib) stop() {
-	println('Shutting down RakLib')
+	r.logger.log('Shutting down RakLib',.debug)
 	r.shutdown = true
 	r.session_manager.stop()
 }

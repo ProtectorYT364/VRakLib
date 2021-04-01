@@ -1,6 +1,7 @@
 module vraklib
 
 import net
+import bstone
 
 const (
 	default_buffer_size = 8388608 // 1024 * 1024 * 8
@@ -10,12 +11,13 @@ struct UdpSocket {
 mut:
 	s net.UdpConn
 	a net.Addr
+	logger shared bstone.Log
 }
 
-pub fn create_socket(addr net.Addr) ?UdpSocket {
+pub fn create_socket(addr net.Addr, shared logger bstone.Log) ?UdpSocket {
 	conn := net.listen_udp(addr.port) or { panic(err) }//binds to local address
-	println('UDP Socket listening on $addr')
-	return UdpSocket{conn,addr}
+	logger.log('UDP Socket listening on $addr',.debug)
+	return UdpSocket{conn,addr,logger}
 }
 
 fn (s UdpSocket) receive()? Packet {
@@ -46,4 +48,8 @@ fn (mut s UdpSocket) close() {
 	s.s.close() or { 
 		println(err)
 	}
+}
+
+fn(s UdpSocket) logger() shared bstone.Log{
+	return s.logger
 }

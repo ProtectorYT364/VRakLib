@@ -33,11 +33,15 @@ pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
 	return sm
 }
 
+pub fn(s SessionManager) logger() shared bstone.Log{
+	return s.server.logger
+}
+
 fn (s SessionManager) get_raknet_time_ms() i64 {
 	return s.stopwatch.elapsed().milliseconds()
 }
 
-pub fn (mut s SessionManager) start(shared logger bstone.Log) {
+pub fn (mut s SessionManager) start() {
 	// TODO share sessions with main thread https://github.com/vlang/v/blob/master/doc/docs.md#shared-objects
 	mut threads := []thread{}
 	threads << go s.listen_socket()
@@ -47,9 +51,9 @@ pub fn (mut s SessionManager) start(shared logger bstone.Log) {
 }
 
 pub fn (mut s SessionManager) stop() {
-	println('Stopping SessionManager')
+	s.logger().log('Stopping SessionManager',.debug)
 	s.shutdown = true
-	println('Shutdown listen socket')
+	s.logger().log('Shutdown listen socket',.debug)
 	s.socket.close()
 }
 
@@ -60,11 +64,11 @@ fn (mut s SessionManager) listen_socket() {
 			if s.server.shutdown{
 				break
 			}
-			println(err)
+			s.logger().log(err,.error)
 			continue
 		}
 		s.handle(mut p) or{
-			println(err)
+			s.logger().log(err,.error)
 			continue
 		}
 	}
@@ -150,7 +154,7 @@ fn (mut s SessionManager) tick_sessions() {
 		*/
 		// s.current_tick++
 	}
-	println('Shutdown tick sessions')
+	s.logger().log('Shutdown tick sessions',.debug)
 }
 
 fn (s SessionManager) get_session_by_address(address net.Addr) Session {
