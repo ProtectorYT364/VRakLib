@@ -1,7 +1,5 @@
 module vraklib
 
-import time
-
 // HandleUnconnectedMessage handles an incoming unconnected message from a UDPAddr.
 // A response will be made for every packet, which gets sent back to the sender.
 // A session gets created for the sender once the OpenConnectionRequest2 gets sent.

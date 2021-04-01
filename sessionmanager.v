@@ -2,6 +2,7 @@ module vraklib
 
 import net
 import time
+import bstone
 
 struct SessionManager {
 mut:
@@ -36,7 +37,9 @@ fn (s SessionManager) get_raknet_time_ms() i64 {
 	return s.stopwatch.elapsed().milliseconds()
 }
 
-pub fn (mut s SessionManager) start() {
+pub fn (mut s SessionManager) start(shared logger bstone.Log) {
+	s.shutdown = &logger.stop
+	println('Shutdown? $s.shutdown')
 	// TODO share sessions with main thread https://github.com/vlang/v/blob/master/doc/docs.md#shared-objects
 	mut threads := []thread{}
 	threads << go s.listen_socket()

@@ -88,7 +88,7 @@ fn(mut queue DatagramQueue) clear() {
 // missing returns a slice of all indices in the datagram queue that weren't set using put while within the
 // window of lowest and highest index. The queue is cleared after this call.
 fn(mut queue DatagramQueue) missing() ([]u32) {
-	mut indices := []u32
+	mut indices := []u32{}
 	for index in queue.lowest..queue.highest {
 		if u32(index) in queue.queue {
 			indices << u32(index)
