@@ -16,7 +16,7 @@ pub fn (r ConnectedPong) encode() ByteBuffer {
 
 pub fn (mut r ConnectedPong) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
+	b.get_byte() // pid
 	r.client_timestamp = b.get_ulong()
 	r.server_timestamp = b.get_ulong()
 }

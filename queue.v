@@ -2,8 +2,9 @@ module vraklib
 
 import time
 
-/* interface Queue {
-} */
+/*
+interface Queue {
+}*/
 
 // struct PacketQueue {
 // 	lowest  U24
@@ -47,17 +48,17 @@ import time
 // func (queue *packetQueue) WindowSize() uint24 {
 // 	return queue.highest - queue.lowest
 // }
-
 struct DatagramQueue {
 mut:
-	lowest u32
+	lowest  u32
 	highest u32
-	//queue map[u32]//todo Packet or sth here
-	queue []u32//todo Packet or sth here
+	// queue map[u32]//todo Packet or sth here
+	queue []u32
+	// todo Packet or sth here
 }
 
 // put puts an index in the queue. If the index was already occupied once, false is returned.
-fn(mut queue DatagramQueue) put(index u32) bool {
+fn (mut queue DatagramQueue) put(index u32) bool {
 	if index < queue.lowest {
 		return false
 	}
@@ -73,9 +74,9 @@ fn(mut queue DatagramQueue) put(index u32) bool {
 
 // clear attempts to clear as many indices from the queue as possible, increasing the lowest index if and when
 // possible.
-fn(mut queue DatagramQueue) clear() {
+fn (mut queue DatagramQueue) clear() {
 	mut i := queue.lowest
-	for index in queue.lowest..queue.highest {
+	for index in queue.lowest .. queue.highest {
 		if !(u32(index) in queue.queue) {
 			break
 		}
@@ -87,12 +88,14 @@ fn(mut queue DatagramQueue) clear() {
 
 // missing returns a slice of all indices in the datagram queue that weren't set using put while within the
 // window of lowest and highest index. The queue is cleared after this call.
-fn(mut queue DatagramQueue) missing() ([]u32) {
+fn (mut queue DatagramQueue) missing() []u32 {
 	mut indices := []u32{}
-	for index in queue.lowest..queue.highest {
+	for index in queue.lowest .. queue.highest {
 		if u32(index) in queue.queue {
 			indices << u32(index)
-			queue.queue[u32(index)]// = struct{}{}
+			queue.queue[u32(index)] = T{}
+			{
+			}
 		}
 	}
 	queue.clear()
@@ -100,7 +103,7 @@ fn(mut queue DatagramQueue) missing() ([]u32) {
 }
 
 // WindowSize returns the size of the window held by the datagram queue.
-fn(mut queue DatagramQueue) window_size() u32 {
+fn (mut queue DatagramQueue) window_size() u32 {
 	return queue.highest - queue.lowest
 }
 
@@ -130,9 +133,9 @@ fn (mut queue RecoveryQueue) take(index u32) (RaklibPacketType, bool) {
 	val := queue.queue[index]
 	if ok {
 		queue.queue.delete(index.str())
-		queue.delays[queue.ptr] = time.now()-queue.timestamps[index]
+		queue.delays[queue.ptr] = time.now() - queue.timestamps[index]
 		queue.ptr++
-		if queue.ptr == delay_record_count {
+		if queue.ptr == vraklib.delay_record_count {
 			queue.ptr = 0
 		}
 		queue.timestamps.delete(index.str())
@@ -147,7 +150,7 @@ fn (mut queue RecoveryQueue) take_without_delay_add(index u32) (RaklibPacketType
 	if index in queue.queue {
 		queue.queue.delete(index.str())
 		queue.timestamps.delete(index.str())
-	}else{
+	} else {
 		return val, false
 	}
 	return val, true

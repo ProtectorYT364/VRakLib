@@ -9,8 +9,8 @@ const (
 	reliability_unreliable_with_ack_receipt       = 0x05
 	reliability_reliable_with_ack_receipt         = 0x06
 	reliability_reliable_ordered_with_ack_receipt = 0x07
-	
-	splitflag = 0x10
+
+	splitflag                                     = 0x10
 )
 
 const (
@@ -19,23 +19,26 @@ const (
 )
 
 fn reliability_is_reliable(reliability byte) bool {
-	return reliability == reliability_reliable ||
-		reliability == reliability_reliable_ordered_with_ack_receipt || reliability == reliability_reliable_sequenced ||
-		reliability == reliability_reliable_with_ack_receipt || reliability == reliability_reliable_ordered_with_ack_receipt
+	return reliability == vraklib.reliability_reliable
+		|| reliability == vraklib.reliability_reliable_ordered_with_ack_receipt
+		|| reliability == vraklib.reliability_reliable_sequenced
+		|| reliability == vraklib.reliability_reliable_with_ack_receipt
+		|| reliability == vraklib.reliability_reliable_ordered_with_ack_receipt
 }
 
 fn reliability_is_sequenced(reliability byte) bool {
-	return reliability == reliability_unreliable_sequenced ||
-		reliability == reliability_reliable_sequenced
+	return reliability == vraklib.reliability_unreliable_sequenced
+		|| reliability == vraklib.reliability_reliable_sequenced
 }
 
 fn reliability_is_ordered(reliability byte) bool {
-	return reliability == reliability_reliable_ordered ||
-		reliability == reliability_reliable_ordered_with_ack_receipt
+	return reliability == vraklib.reliability_reliable_ordered
+		|| reliability == vraklib.reliability_reliable_ordered_with_ack_receipt
 }
 
 fn reliability_is_sequenced_or_ordered(reliability byte) bool {
-	return reliability == reliability_unreliable_sequenced ||
-		reliability == reliability_reliable_ordered || reliability == reliability_reliable_sequenced ||
-		reliability == reliability_reliable_ordered_with_ack_receipt
+	return reliability == vraklib.reliability_unreliable_sequenced
+		|| reliability == vraklib.reliability_reliable_ordered
+		|| reliability == vraklib.reliability_reliable_sequenced
+		|| reliability == vraklib.reliability_reliable_ordered_with_ack_receipt
 }

@@ -11,9 +11,11 @@ fn test_bytebuffer() {
 	bytebuffer.put_int(123456789)
 	bytebuffer.put_long(i64(123456789123456789))
 	bytebuffer.put_ulong(u64(12345678912345789123))
+
 	// bytebuffer.put_string('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
 	bytebuffer.put_float(f32(3214.1567))
 	bytebuffer.put_double(f64(3214567585955.1234))
+
 	// println(bytebuffer.length)
 	// println(bytebuffer.position)
 	bytebuffer.position = u32(0)
@@ -24,9 +26,11 @@ fn test_bytebuffer() {
 	println(bytebuffer.get_int())
 	println(bytebuffer.get_long())
 	println(bytebuffer.get_ulong())
+
 	// println(bytebuffer.get_string())
 	println(bytebuffer.get_float())
 	println(bytebuffer.get_double())
+
 	// bytebuffer.print()
 	mut v32 := u32(1)
 	print_bit32(v32)
@@ -45,9 +49,7 @@ fn test_bytebuffer() {
 	b << byte(0x5b)
 	b << byte(0xcd)
 	b << byte(0x15)
-	v := i64(i64(b[0]) << i64(56)) | i64(i64(b[1]) << i64(48)) | i64(i64(b[2]) << i64(40)) | i64(i64(b[3]) <<
-		i64(32)) | i64(i64(b[4]) << i64(24)) | i64(i64(b[5]) << i64(16)) | i64(i64(b[6]) << i64(8)) |
-		i64(b[7])
+	v := i64(i64(b[0]) << i64(56)) | i64(i64(b[1]) << i64(48)) | i64(i64(b[2]) << i64(40)) | i64(i64(b[3]) << i64(32)) | i64(i64(b[4]) << i64(24)) | i64(i64(b[5]) << i64(16)) | i64(i64(b[6]) << i64(8)) | i64(b[7])
 	println(v)
 	mut g := []byte{}
 	g << byte(0x00)
@@ -91,13 +93,13 @@ fn test_array() {
 	// mut st := maptest['1']
 	// st.m['2'] = 12345
 	// maptest['1'] = st
-	mut maptest := {
+	mut maptest := map{
 		'1': Test{}
 	}
 	mut st := maptest['1']
 	st.m['2'] = 12345
 	st.m['3'] = 4564
-	st.m = {
+	st.m = map{
 		'2': 12345
 	}
 	maptest['1'] = st

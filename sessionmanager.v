@@ -33,7 +33,7 @@ pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
 	return sm
 }
 
-pub fn(s SessionManager) logger() shared bstone.Log{
+pub fn (s SessionManager) logger() shared bstone.Log {
 	return s.server.logger
 }
 
@@ -47,13 +47,14 @@ pub fn (mut s SessionManager) start() {
 	threads << go s.listen_socket()
 	threads << go s.tick_sessions()
 	threads.wait()
-	//s.stop()
+
+	// s.stop()
 }
 
 pub fn (mut s SessionManager) stop() {
-	s.logger().log('Stopping SessionManager',.debug)
+	s.logger().log('Stopping SessionManager', .debug)
 	s.shutdown = true
-	s.logger().log('Shutdown listen socket',.debug)
+	s.logger().log('Shutdown listen socket', .debug)
 	s.socket.close()
 }
 
@@ -61,20 +62,20 @@ fn (mut s SessionManager) listen_socket() {
 	for !s.server.shutdown {
 		// receive individual packets
 		mut p := s.socket.receive() or {
-			if s.server.shutdown{
+			if s.server.shutdown {
 				break
 			}
-			s.logger().log(err,.error)
+			s.logger().log(err, .error)
 			continue
 		}
-		s.handle(mut p) or{
-			s.logger().log(err,.error)
+		s.handle(mut p) or {
+			s.logger().log(err, .error)
 			continue
 		}
 	}
 }
 
-fn (mut s SessionManager) handle(mut p Packet)? {
+fn (mut s SessionManager) handle(mut p Packet) ? {
 	mut b := p.buffer_from_packet()
 	if !s.session_exists(p.address) { // offline message
 		pid := b.get_byte()
@@ -98,6 +99,7 @@ fn (mut s SessionManager) handle(mut p Packet)? {
 		}
 		return
 	}
+
 	// TODO else
 	println('pog')
 	mut session := s.get_session_by_address(p.address) // online message
@@ -121,6 +123,7 @@ fn (mut s SessionManager) handle_ack(mut p Packet) {
 	mut ack := Ack{}
 	ack.decode(mut p)
 	println('handle_ack $ack')
+
 	// TODO remove packet from recovery
 }
 
@@ -128,15 +131,17 @@ fn (mut s SessionManager) handle_nack(mut p Packet) {
 	mut nack := Nack{}
 	nack.decode(mut p)
 	println('handle_nack $nack')
+
 	// TODO resend packets from recovery
 }
 
-/* fn (mut s Session) handle_datagram(mut b ByteBuffer) {
+/*
+fn (mut s Session) handle_datagram(mut b ByteBuffer) {
 	//mut d := Datagram{}
 	//d.decode(mut p)
 	println('handle_datagram $b')
 	s.handle_packet(mut b)
-} */
+}*/
 
 fn (mut s SessionManager) tick_sessions() {
 	for !s.server.shutdown {
@@ -145,6 +150,7 @@ fn (mut s SessionManager) tick_sessions() {
 			return
 		}
 		*/
+
 		// println('tick $s.current_tick')
 		// time.usleep(time.Duration.second /* / 80 */)//TODO fix
 		/*
@@ -152,9 +158,10 @@ fn (mut s SessionManager) tick_sessions() {
 			manager.update_session(session, index)
 		}
 		*/
+
 		// s.current_tick++
 	}
-	s.logger().log('Shutdown tick sessions',.debug)
+	s.logger().log('Shutdown tick sessions', .debug)
 }
 
 fn (s SessionManager) get_session_by_address(address net.Addr) Session {
@@ -190,5 +197,6 @@ fn (mut s SessionManager) open_session(session Session) {
 
 fn (mut s SessionManager) handle_encapsulated(session Session, packet EncapsulatedPacket) {
 	println('SM HANDLE ENCAP $packet')
+
 	// s.server.handle_encapsulated(session.internal_id.str(), packet, priority_normal)
 }

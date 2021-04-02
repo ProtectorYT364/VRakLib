@@ -10,6 +10,7 @@ mut:
 	mtu_size       u16
 	client_guid    u64
 }
+
 pub fn (mut r OpenConnectionRequest2) encode() ByteBuffer {
 	mut b := empty_buffer()
 	b.put_byte(id_open_connection_request2)
@@ -20,9 +21,10 @@ pub fn (mut r OpenConnectionRequest2) encode() ByteBuffer {
 	b.put_ulong(r.client_guid)
 	return b
 }
+
 pub fn (mut r OpenConnectionRequest2) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	println(b.get_byte())//pid
+	println(b.get_byte()) // pid
 	r.magic = b.get_bytes(16)
 	println(r.magic)
 	println(b.buffer[b.position..])

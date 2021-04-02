@@ -1,6 +1,7 @@
 module vraklib
 
-/* fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
+/*
+fn (pk Packet) get_packet_from_match(has_session bool) RaklibPacket {
 	mut p := pk
 	header := p.buffer[0]
 	if has_session {
@@ -44,17 +45,17 @@ module vraklib
 	mut packet := RawPacket{}
 	packet.decode(mut p)
 	return packet//todo return error() instead
-} */
+}*/
 
 fn (p RaklibPacket) get_id() int {
 	match p {
 		Ack { return flag_datagram_ack } // TODO ack vs nack
-		//Nack { return flag_datagram_nack } // TODO ack vs nack
+		// Nack { return flag_datagram_nack } // TODO ack vs nack
 		ConnectedPing { return id_connected_ping }
 		UnConnectedPing { return id_unconnected_ping }
-		//UnConnectedPingOpenConnections { return id_unconnected_ping_open_connections }
+		// UnConnectedPingOpenConnections { return id_unconnected_ping_open_connections }
 		ConnectedPong { return id_connected_pong }
-		//DetectLostConnections { return id_detect_lost_connections }
+		// DetectLostConnections { return id_detect_lost_connections }
 		OpenConnectionRequest1 { return id_open_connection_request1 }
 		OpenConnectionReply1 { return id_open_connection_reply1 }
 		OpenConnectionRequest2 { return id_open_connection_request2 }
@@ -62,7 +63,7 @@ fn (p RaklibPacket) get_id() int {
 		ConnectionRequest { return id_connection_request }
 		ConnectionRequestAccepted { return id_connection_request_accepted }
 		NewIncomingConnection { return id_new_incoming_connection }
-		//DisconnectNotification { return id_disconnect_notification }
+		// DisconnectNotification { return id_disconnect_notification }
 		IncompatibleProtocolVersion { return id_incompatible_protocol_version }
 		UnConnectedPong { return id_unconnected_pong }
 		else { return -1 }

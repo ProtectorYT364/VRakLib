@@ -4,8 +4,9 @@ import net
 
 struct ConnectionRequestAccepted {
 mut:
-	client_address     net.Addr
-	system_addresses   [/* 20 */]net.Addr
+	client_address net.Addr
+	//[20]net.Addr
+	system_addresses   []net.Addr
 	request_timestamp  u64
 	accepted_timestamp u64
 }
@@ -17,7 +18,7 @@ pub fn (r ConnectionRequestAccepted) encode() ByteBuffer {
 	b.put_short(i16(0))
 	println(r.system_addresses)
 	for _, addr in r.system_addresses {
-	println(addr)
+		println(addr)
 		b.put_address(addr)
 	}
 	b.put_ulong(r.request_timestamp)
@@ -27,15 +28,16 @@ pub fn (r ConnectionRequestAccepted) encode() ByteBuffer {
 
 pub fn (mut r ConnectionRequestAccepted) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
+	b.get_byte() // pid
 	r.client_address = b.get_address()
 	println(r.client_address)
 	b.get_bytes(2)
-	for i in 0..20 {
-		//r.system_addresses[i] = b.get_address()
+	for i in 0 .. 20 {
+		// r.system_addresses[i] = b.get_address()
 		r.system_addresses << b.get_address()
-	println(r.system_addresses[r.system_addresses.len-1])
-		//if b.remainder() == 16 {
+		println(r.system_addresses[r.system_addresses.len - 1])
+
+		// if b.remainder() == 16 {
 		if b.remainder() <= 16 {
 			break
 		}

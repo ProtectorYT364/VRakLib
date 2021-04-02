@@ -6,6 +6,7 @@ mut:
 	request_timestamp u64
 	secure            bool
 }
+
 pub fn (r ConnectionRequest) encode() ByteBuffer {
 	mut b := empty_buffer()
 	b.put_byte(id_connection_request)
@@ -14,9 +15,10 @@ pub fn (r ConnectionRequest) encode() ByteBuffer {
 	b.put_bool(r.secure)
 	return b
 }
+
 pub fn (mut r ConnectionRequest) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
+	b.get_byte() // pid
 	println(p)
 	r.client_guid = b.get_ulong()
 	println(r.client_guid)

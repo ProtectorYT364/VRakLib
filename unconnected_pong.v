@@ -1,8 +1,8 @@
 module vraklib
 
 pub struct UnConnectedPong {
-//mut:
-pub mut://TODO just for debug
+pub mut:
+	// mut: // TODO just for debug
 	// magic [16]byte
 	magic          []byte
 	send_timestamp u64
@@ -17,7 +17,8 @@ pub fn (mut r UnConnectedPong) encode() ByteBuffer {
 	b.put_ulong(r.server_guid)
 	r.magic = get_packet_magic()
 	b.put_bytes(r.magic)
-	//b.put_ushort(u16(r.data.len))
+
+	// b.put_ushort(u16(r.data.len))
 	b.put_ushort(u16(r.data.len))
 	b.put_bytes(r.data)
 	return b
@@ -25,7 +26,7 @@ pub fn (mut r UnConnectedPong) encode() ByteBuffer {
 
 pub fn (mut r UnConnectedPong) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
+	b.get_byte() // pid
 	r.send_timestamp = u64(b.get_ulong())
 	r.server_guid = u64(b.get_ulong())
 	r.magic = b.get_bytes(16)

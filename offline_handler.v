@@ -28,7 +28,7 @@ fn (mut s SessionManager) handle_unconnected_ping(mut p Packet) {
 	ping.decode(mut p)
 	println('handle_unconnected_ping $ping')
 
-	//println(request)
+	// println(request)
 	mut pong := UnConnectedPong{}
 	pong.send_timestamp = timestamp()
 	pong.server_guid = server_guid // TODO from s.
@@ -36,12 +36,15 @@ fn (mut s SessionManager) handle_unconnected_ping(mut p Packet) {
 	mut b := pong.encode()
 	b.trim()
 	s.send_packet(new_packet_from_bytebuffer(b, p.address))
-	//DEBUG
-	/* mut pongd := UnConnectedPong{}
+
+	// DEBUG
+	/*
+	mut pongd := UnConnectedPong{}
 	pongd.decode(mut new_packet_from_bytebuffer(b,p.address))
 	println(pong)
-	println(pongd) */
-	//assert pong == pongd
+	println(pongd)*/
+
+	// assert pong == pongd
 }
 
 // handleOpenConnectionRequest1 handles an open connection request 1.
@@ -50,7 +53,7 @@ fn (s SessionManager) handle_open_connection_request1(mut p Packet) {
 	mut request := OpenConnectionRequest1{}
 	request.decode(mut p)
 	println('handle_open_connection_request1 $request')
-	
+
 	mut reply := OpenConnectionReply1{}
 	reply.server_guid = server_guid // TODO from s.
 	println(reply.server_guid)
@@ -62,12 +65,15 @@ fn (s SessionManager) handle_open_connection_request1(mut p Packet) {
 	b.trim()
 	println('SENDING $reply')
 	s.send_packet(new_packet_from_bytebuffer(b, p.address))
-	//DEBUG
-	/* mut pongd := OpenConnectionReply1{}
+
+	// DEBUG
+	/*
+	mut pongd := OpenConnectionReply1{}
 	pongd.decode(mut new_packet_from_bytebuffer(b,p.address))
 	println(reply)
-	println(pongd) */
-	//assert reply == pongd
+	println(pongd)*/
+
+	// assert reply == pongd
 }
 
 // handleOpenConnectionRequest2 handles an open connection request 2.
@@ -84,7 +90,7 @@ fn (mut s SessionManager) handle_open_connection_request2(mut p Packet) {
 		reply.mtu_size = min_mtu_size
 	} else if request.mtu_size > max_mtu_size {
 		reply.mtu_size = max_mtu_size
-	} else{
+	} else {
 		reply.mtu_size = request.mtu_size
 	}
 	println(reply.mtu_size)
@@ -101,13 +107,15 @@ fn (mut s SessionManager) handle_open_connection_request2(mut p Packet) {
 	println('SENDING $reply')
 	s.send_packet(new_packet_from_bytebuffer(b, p.address))
 
-	//DEBUG
-	/* mut pongd := OpenConnectionReply2{}
+	// DEBUG
+	/*
+	mut pongd := OpenConnectionReply2{}
 	pongd.decode(mut new_packet_from_bytebuffer(b,p.address))
 	println(reply)
 	println(pongd)
 	assert reply.magic == pongd.magic
 	assert reply.server_guid == pongd.server_guid
 	assert reply.mtu_size == pongd.mtu_size
-	assert reply.secure == pongd.secure */
+	assert reply.secure == pongd.secure
+	*/
 }

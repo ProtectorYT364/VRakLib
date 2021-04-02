@@ -7,6 +7,7 @@ pub mut:
 	send_timestamp u64
 	client_guid    u64
 }
+
 pub fn (r RawPacket) encode() ByteBuffer {
 	return new_bytebuffer([]byte{})
 }

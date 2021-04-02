@@ -87,17 +87,18 @@ fn (p RaklibPacket) has_magic() bool {
 }
 
 fn (mut packet Packet) from_binary(mut b ByteBuffer) EncapsulatedPacket { // AKA "read"
-	//mut b := _b
+	// mut b := _b
 	println('FROM BINARY $b')
 	mut internal_packet := EncapsulatedPacket{}
 	flags := b.get_byte()
 	internal_packet.has_split = (flags & splitflag) != 0
 	internal_packet.reliability = (flags & 224) >> 5
 
-	/* if b.feof() {
+	/*
+	if b.feof() {
 		error('no bytes left to read')
 		return internal_packet
-	} */
+	}*/
 	mut length := u16(math.ceil(b.get_ushort()))
 	length >>= 3
 	internal_packet.length = u16(length)

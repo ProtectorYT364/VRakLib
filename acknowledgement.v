@@ -1,11 +1,12 @@
 module vraklib
 
-/* interface Acknowledgement{
+/*
+interface Acknowledgement{
 mut:
 	packets []u32
 	//encode() ByteBuffer
 	//decode(mut p Packet)
-} */
+}*/
 
 struct Ack {
 mut:
@@ -17,7 +18,8 @@ mut:
 	packets []u32
 }
 
-/* pub fn (mut r Acknowledgement) encode() ByteBuffer {
+/*
+pub fn (mut r Acknowledgement) encode() ByteBuffer {
 	mut b := empty_buffer()
 
 	mut packet_count := r.packets.len
@@ -101,21 +103,22 @@ pub fn (mut r Acknowledgement) decode(mut p Packet) {
 			count++
 		}
 	}
-} */
+}*/
 
 pub fn (mut r Nack) encode() ByteBuffer {
 	mut b := empty_buffer()
 	println('Acknowledgement of type:')
 	println(typeof(r).name)
-	//b.put_byte(r.get_id())
-	//if r is Ack {
-	b.put_byte(flag_datagram_nack)
-	//}
-	//else if r is Nack {
-	//b.put_byte(flag_datagram_nack)}
-	//else {
-	//b.put_byte(flag_datagram_ack)}
 
+	// b.put_byte(r.get_id())
+	// if r is Ack {
+	b.put_byte(flag_datagram_nack)
+
+	//}
+	// else if r is Nack {
+	// b.put_byte(flag_datagram_nack)}
+	// else {
+	// b.put_byte(flag_datagram_ack)}
 	mut packet_count := r.packets.len
 
 	if packet_count == 0 {
@@ -125,8 +128,7 @@ pub fn (mut r Nack) encode() ByteBuffer {
 
 	r.packets.sort(a < b)
 
-	mut stream := new_bytebuffer([]byte{len:default_buffer_size})//TODO without len
-
+	mut stream := new_bytebuffer([]byte{len: default_buffer_size}) // TODO without len
 	mut pointer := 1
 	mut first_packet := r.packets[0]
 	mut last_packet := r.packets[0]
@@ -145,7 +147,7 @@ pub fn (mut r Nack) encode() ByteBuffer {
 				stream.put_ltriad(last_packet)
 				current_packet = last_packet
 			} else {
-			stream.put_byte(0)
+				stream.put_byte(0)
 				stream.put_ltriad(first_packet)
 				stream.put_ltriad(last_packet)
 
@@ -159,16 +161,17 @@ pub fn (mut r Nack) encode() ByteBuffer {
 	}
 
 	if first_packet == last_packet {
-				stream.put_byte(1)
-				stream.put_ltriad(first_packet)
+		stream.put_byte(1)
+		stream.put_ltriad(first_packet)
 	} else {
-				stream.put_byte(0)
-				stream.put_ltriad(first_packet)
-				stream.put_ltriad(last_packet)
+		stream.put_byte(0)
+		stream.put_ltriad(first_packet)
+		stream.put_ltriad(last_packet)
 	}
 
 	b.put_short(i16(interval_count))
-	//b.put_bytes(stream.buffer)
+
+	// b.put_bytes(stream.buffer)
 	stream.trim()
 	b.put_bytes(stream.buffer)
 	return b
@@ -176,8 +179,8 @@ pub fn (mut r Nack) encode() ByteBuffer {
 
 pub fn (mut r Nack) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
-	packet_count := b.get_short()//ushort?
+	b.get_byte() // pid
+	packet_count := b.get_short() // ushort?
 	mut count := 0
 	for i := 0; i < packet_count && !b.feof() && count < 4096; i++ {
 		if b.get_byte() == 0 {
@@ -188,11 +191,10 @@ pub fn (mut r Nack) decode(mut p Packet) {
 				end = start + 512
 			}
 
-			for pack in start..end {
+			for pack in start .. end {
 				r.packets << u32(pack)
 				count++
 			}
-
 		} else {
 			r.packets << b.get_ltriad()
 			count++
@@ -204,15 +206,16 @@ pub fn (mut r Ack) encode() ByteBuffer {
 	mut b := empty_buffer()
 	println('Acknowledgement of type:')
 	println(typeof(r).name)
-	//b.put_byte(r.get_id())
-	//if r is Ack {
-	b.put_byte(flag_datagram_ack)
-	//}
-	//else if r is Nack {
-	//b.put_byte(flag_datagram_nack)}
-	//else {
-	//b.put_byte(flag_datagram_ack)}
 
+	// b.put_byte(r.get_id())
+	// if r is Ack {
+	b.put_byte(flag_datagram_ack)
+
+	//}
+	// else if r is Nack {
+	// b.put_byte(flag_datagram_nack)}
+	// else {
+	// b.put_byte(flag_datagram_ack)}
 	mut packet_count := r.packets.len
 
 	if packet_count == 0 {
@@ -222,8 +225,7 @@ pub fn (mut r Ack) encode() ByteBuffer {
 
 	r.packets.sort(a < b)
 
-	mut stream := new_bytebuffer([]byte{len:default_buffer_size})//TODO without len
-
+	mut stream := new_bytebuffer([]byte{len: default_buffer_size}) // TODO without len
 	mut pointer := 1
 	mut first_packet := r.packets[0]
 	mut last_packet := r.packets[0]
@@ -242,7 +244,7 @@ pub fn (mut r Ack) encode() ByteBuffer {
 				stream.put_ltriad(last_packet)
 				current_packet = last_packet
 			} else {
-			stream.put_byte(0)
+				stream.put_byte(0)
 				stream.put_ltriad(first_packet)
 				stream.put_ltriad(last_packet)
 
@@ -256,16 +258,17 @@ pub fn (mut r Ack) encode() ByteBuffer {
 	}
 
 	if first_packet == last_packet {
-				stream.put_byte(1)
-				stream.put_ltriad(first_packet)
+		stream.put_byte(1)
+		stream.put_ltriad(first_packet)
 	} else {
-				stream.put_byte(0)
-				stream.put_ltriad(first_packet)
-				stream.put_ltriad(last_packet)
+		stream.put_byte(0)
+		stream.put_ltriad(first_packet)
+		stream.put_ltriad(last_packet)
 	}
 
 	b.put_short(i16(interval_count))
-	//b.put_bytes(stream.buffer)
+
+	// b.put_bytes(stream.buffer)
 	stream.trim()
 	b.put_bytes(stream.buffer)
 	return b
@@ -273,8 +276,8 @@ pub fn (mut r Ack) encode() ByteBuffer {
 
 pub fn (mut r Ack) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
-	packet_count := b.get_short()//ushort?
+	b.get_byte() // pid
+	packet_count := b.get_short() // ushort?
 	mut count := 0
 	for i := 0; i < packet_count && !b.feof() && count < 4096; i++ {
 		if b.get_byte() == 0 {
@@ -285,11 +288,10 @@ pub fn (mut r Ack) decode(mut p Packet) {
 				end = start + 512
 			}
 
-			for pack in start..end {
+			for pack in start .. end {
 				r.packets << u32(pack)
 				count++
 			}
-
 		} else {
 			r.packets << b.get_ltriad()
 			count++

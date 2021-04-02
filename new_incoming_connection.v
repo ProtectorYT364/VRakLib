@@ -9,6 +9,7 @@ mut:
 	request_timestamp  u64
 	accepted_timestamp u64
 }
+
 pub fn (r NewIncomingConnection) encode() ByteBuffer {
 	mut b := empty_buffer()
 	b.put_byte(id_new_incoming_connection)
@@ -20,9 +21,10 @@ pub fn (r NewIncomingConnection) encode() ByteBuffer {
 	b.put_ulong(r.accepted_timestamp)
 	return b
 }
+
 pub fn (mut r NewIncomingConnection) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
+	b.get_byte() // pid
 	r.server_address = b.get_address()
 	for i := 0; i < 20; i++ {
 		r.system_addresses[i] = b.get_address()

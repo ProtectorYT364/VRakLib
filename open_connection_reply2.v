@@ -11,6 +11,7 @@ mut:
 	mtu_size       u16
 	secure         bool
 }
+
 pub fn (mut r OpenConnectionReply2) encode() ByteBuffer {
 	mut b := empty_buffer()
 	b.put_byte(id_open_connection_reply2)
@@ -22,9 +23,10 @@ pub fn (mut r OpenConnectionReply2) encode() ByteBuffer {
 	b.put_bool(r.secure)
 	return b
 }
+
 pub fn (mut r OpenConnectionReply2) decode(mut p Packet) {
 	mut b := p.buffer_from_packet()
-	b.get_byte()//pid
+	b.get_byte() // pid
 	r.magic = b.get_bytes(16)
 	r.server_guid = u64(b.get_long())
 	r.client_address = b.get_address()

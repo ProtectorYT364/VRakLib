@@ -9,7 +9,7 @@ struct Datagram {
 mut:
 	packet_pair     bool
 	continuous_send bool
-	needs_b_and_as    bool
+	needs_b_and_as  bool
 pub mut:
 	packet_id       byte
 	sequence_number U24
@@ -41,15 +41,18 @@ pub fn (mut c Datagram) decode(mut b ByteBuffer) {
 	c.sequence_number = b.get_ltriad()
 	println(c.sequence_number)
 
-	/* header := b.get_byte()
+	/*
+	header := b.get_byte()
 	println(header.hex())
 	c.packet_pair = (header & bitflag_packet_pair) != 0
 	c.continuous_send = (header & bitflag_continuous_send) != 0
-	c.needs_b_and_as = (header & bitflag_needs_b_and_as) != 0 */
+	c.needs_b_and_as = (header & bitflag_needs_b_and_as) != 0
+	*/
 
-	for !b.feof(){
+	for !b.feof() {
 		mut p := Packet{}
 		c.packets << p.from_binary(mut b)
 	}
-	//println(c)
+
+	// println(c)
 }
