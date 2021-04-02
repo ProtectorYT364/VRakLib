@@ -52,7 +52,6 @@ struct DatagramQueue {
 mut:
 	lowest  u32
 	highest u32
-	// queue map[u32]//todo Packet or sth here
 	queue []u32
 	// todo Packet or sth here
 }
@@ -93,9 +92,7 @@ fn (mut queue DatagramQueue) missing() []u32 {
 	for index in queue.lowest .. queue.highest {
 		if u32(index) in queue.queue {
 			indices << u32(index)
-			queue.queue[u32(index)] = T{}
-			{
-			}
+			queue.queue << u32(index)
 		}
 	}
 	queue.clear()
