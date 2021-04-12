@@ -59,5 +59,5 @@ pub fn (mut p PongData) from_string(_data string) {
 		p.port = splitted[9].int()
 	}
 
-	// idk why there are 2 ports, ignore for now
+	// idk why there are 2 ports, ignore for now //TODO i learned why, check Cave discord
 }

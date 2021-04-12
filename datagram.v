@@ -11,7 +11,7 @@ mut:
 	continuous_send bool
 	needs_b_and_as  bool
 pub mut:
-	packet_id       byte
+//	packet_id       byte
 	sequence_number U24
 	packets         []EncapsulatedPacket
 }
@@ -26,7 +26,7 @@ fn (c Datagram) get_total_length() u32 {
 
 pub fn (mut r Datagram) encode() ByteBuffer {
 	mut b := empty_buffer()
-	b.put_byte(byte(bitflag_valid) | r.packet_id)
+	b.put_byte(byte(bitflag_datagram))
 	b.put_ltriad(r.sequence_number)
 	for internal_packet in r.packets {
 		packet := internal_packet.to_binary()

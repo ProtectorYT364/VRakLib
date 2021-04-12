@@ -95,8 +95,8 @@ pub fn (mut b ByteBuffer) put_bool(v bool) {
 	b.position++
 }
 
-// https://doc.rust-lang.org/std/primitive.i16.html
-// -32768...32767
+// https://doc.rust-lang.org/std/primitive.i16.html -32768...32767
+
 pub fn (mut b ByteBuffer) put_short(v i16) {
 	//     assert b.position + u32(sizeof(i16)) <= b.len()
 	mut vv := v
@@ -111,8 +111,8 @@ pub fn (mut b ByteBuffer) put_short(v i16) {
 	b.position += u32(sizeof(i16))
 }
 
-// https://doc.rust-lang.org/std/primitive.u16.html
-// 0...65535
+// https://doc.rust-lang.org/std/primitive.u16.html 0...65535
+
 pub fn (mut b ByteBuffer) put_ushort(v u16) {
 	//     assert b.position + u32(sizeof(u16)) <= b.len()
 	mut vv := v
@@ -219,7 +219,7 @@ pub fn (mut b ByteBuffer) put_float(v f32) {
 		println('ENDIANNESS')
 		vv = swapf(v)
 	}
-	as_int := &u32(&vv)
+	as_int := unsafe { &u32(&vv) }
 	unsafe {
 		b.buffer[b.position] = byte(u32(*as_int) >> u32(24))
 		b.buffer[b.position + u32(1)] = byte(u32(*as_int) >> u32(16))
@@ -236,7 +236,7 @@ pub fn (mut b ByteBuffer) put_double(v f64) {
 		println('ENDIANNESS')
 		vv = swapd(v)
 	}
-	as_int := &u64(&vv)
+	as_int := unsafe { &u64(&vv) }
 	unsafe {
 		b.buffer[b.position] = byte(u64(*as_int) >> u64(56))
 		b.buffer[b.position + u32(1)] = byte(u64(*as_int) >> u64(48))
@@ -413,7 +413,7 @@ pub fn (mut b ByteBuffer) get_float() f32 {
 		u32(u32(b.buffer[b.position]) << u32(24)) | u32(u32(b.buffer[b.position + u32(1)]) << u32(16)) | u32(u32(b.buffer[
 			b.position + u32(2)]) << u32(8)) | u32(b.buffer[b.position + u32(3)])
 	}
-	ptr := &f32(&v)
+	ptr := unsafe { &f32(&v) }
 	b.position += u32(sizeof(f32))
 	mut vv := *ptr
 	if b.endianness == Endianness.big {
@@ -431,7 +431,7 @@ pub fn (mut b ByteBuffer) get_double() f64 {
 			b.position + u32(4)]) << u64(24)) | u64(u64(b.buffer[b.position + u32(5)]) << u64(16)) | u64(u64(b.buffer[
 			b.position + u32(6)]) << u64(8)) | u64(b.buffer[b.position + u32(7)])
 	}
-	ptr := &f64(&v)
+	ptr := unsafe { &f64(&v) }
 	b.position += u32(sizeof(f64))
 	mut vv := *ptr
 	if b.endianness == Endianness.big {
@@ -453,7 +453,7 @@ pub fn (mut b ByteBuffer) get_string() string {
 			i++
 		}
 	}
-	return tos(v.data, size) // TODO can maybe remove this
+	return unsafe { tos(v.data, size) } // TODO can maybe remove this
 }
 
 pub fn (mut b ByteBuffer) put_address(address net.Addr) {
@@ -548,17 +548,17 @@ pub fn swap64(v u64) u64 {
 pub fn swapf(f f32) f32 {
 	println('SwapF $f')
 	assert sizeof(u32) == sizeof(f32)
-	as_int := &u32(&f)
+	as_int := unsafe { &u32(&f) }
 	v := swap32(u32(*as_int))
-	as_float := &f32(&v)
+	as_float := unsafe { &f32(&v) }
 	return *as_float
 }
 
 pub fn swapd(d f64) f64 {
 	println('SwapD $d')
 	assert sizeof(u64) == sizeof(f64)
-	as_int := &u64(&d)
+	as_int := unsafe { &u64(&d) }
 	v := swap64(u64(*as_int))
-	as_double := &f64(&v)
+	as_double := unsafe { &f64(&v) }
 	return *as_double
 }

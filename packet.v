@@ -5,7 +5,6 @@ import net
 
 const (
 	raknet_magic_length     = 16
-	bitflag_valid           = 0x80
 	bitflag_datagram        = 0x80
 	bitflag_ack             = 0x40
 	bitflag_nack            = 0x20

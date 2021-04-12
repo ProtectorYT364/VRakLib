@@ -3,37 +3,51 @@ module vraklib
 import net
 import time
 import bstone
+import logger
 
 pub struct VRakLib {
 pub mut:
-	address         net.Addr
+	address net.Addr
+	// TODO remove
 	session_manager SessionManager
-	shutdown        bool
-	pong_data       PongData
-	config          shared bstone.ServerConfig
-	logger          shared bstone.Log
+	run             bool = true
+	// TODO remove
+	pong_data PongData
+	settings  shared bstone.Settings
 }
 
-pub fn new_vraklib(shared config bstone.ServerConfig, shared logger bstone.Log) &VRakLib { // TODO pass server config for pongdata
-	address := rlock config {
-		config.addr
+pub fn new_vraklib(shared settings bstone.Settings) &VRakLib {
+	rlock settings {
+		address := settings.addr()
+		pongdata := PongData{
+			status: ServerStatus{
+				server_name: settings.motd
+				max_players: settings.max_players
+				show_version: settings.show_version
+			}
+			server_id: server_guid
+			gamemode_str: settings.gamemode
+			gamemode_int: match settings.gamemode {
+				'Survival' { 0 }
+				'Creative' { 1 }
+				'Adventure' { 2 }
+				else { 1 }
+			}
+			port: address.port
+		}
+		vr := &VRakLib{
+			address: address
+			pong_data: pongdata
+			settings: settings
+		}
+		return vr
 	}
-	pongdata := PongData{
-		server_id: server_guid
-		port: address.port
-	}
-	vr := &VRakLib{
-		address: address
-		pong_data: pongdata
-		config: config
-		logger: logger
-	}
-	return vr
+	panic('Could not create new RakLib instance')
 }
 
 pub fn (mut r VRakLib) start() {
-	r.logger().log('RakLib thread starting on $r.address', .debug)
-	socket := create_socket(r.address, shared r.logger()) or { panic(err) }
+	logger.log('RakLib thread starting on $r.address', .debug)
+	socket := create_socket(r.address) or { panic(err) }
 
 	mut session_manager := new_session_manager(r, socket)
 	r.session_manager = session_manager
@@ -43,16 +57,12 @@ pub fn (mut r VRakLib) start() {
 }
 
 pub fn (mut r VRakLib) stop() {
-	r.logger().log('Shutting down RakLib', .debug)
-	r.shutdown = true
+	r.run = false
+	logger.log('Shutting down RakLib', .debug)
 	r.session_manager.stop()
 }
 
 // timestamp returns a timestamp in milliseconds.
 pub fn timestamp() u64 {
 	return time.now().unix_time_milli()
-}
-
-pub fn (s VRakLib) logger() shared bstone.Log {
-	return s.logger
 }

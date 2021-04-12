@@ -6,53 +6,55 @@ import time
 interface Queue {
 }*/
 
-// struct PacketQueue {
-// 	lowest  U24
-// 	highest U24
-// 	queue   map[][]byte
-// }
+struct PacketQueue {
+mut:
+ 	lowest  U24
+ 	highest U24
+ 	//queue   map[U24][]byte//TODO not yet supported by v
+ 	queue   map[u32][]byte
+ }
 
-// // put puts a value at the index passed. If the index was already occupied once, false is returned.
-// fn (mut queue PacketQueue) put(index U24, packet []byte) bool {
-// 	if index < queue.lowest {
-// 		return false
-// 	}
-// 	if _, ok := queue.queue[index]; ok {
-// 		return false
-// 	}
-// 	if index >= queue.highest {
-// 		queue.highest = index + 1
-// 	}
-// 	queue.queue[index] = packet
-// 	return true
-// }
+// put puts a value at the index passed. If the index was already occupied once, false is returned.
+fn (mut queue PacketQueue) put(index U24, packet []byte) bool {
+	if index < queue.lowest {
+		return false
+	}
+	if index in queue.queue {
+		return false
+	}
+	if index >= queue.highest {
+		queue.highest = index + 1
+	}
+	queue.queue[index] = packet
+	return true
+}
 
-// // fetch attempts to take out as many values from the ordered queue as possible. Upon encountering an index
-// // that has no value yet, the function returns all values that it did find and takes them out.
-// func (queue *packetQueue) fetch() (packets [][]byte) {
-// 	index := queue.lowest
-// 	for index < queue.highest {
-// 		packet, ok := queue.queue[index]
-// 		if !ok {
-// 			break
-// 		}
-// 		delete(queue.queue, index)
-// 		packets = append(packets, packet)
-// 		index++
-// 	}
-// 	queue.lowest = index
-// 	return
-// }
+// fetch attempts to take out as many values from the ordered queue as possible. Upon encountering an index
+// that has no value yet, the function returns all values that it did find and takes them out.
+fn (mut queue PacketQueue) fetch() ([][]byte) {
+	mut packets := [][]byte{}
+	for index in queue.lowest..queue.highest {
+		if !(u32(index) in queue.queue) {
+			break
+		}
+		packet := queue.queue[u32(index)]
+		queue.queue.delete(index.str())
+		packets << packet
+		queue.lowest = index
+	}
+	return packets
+}
 
-// // WindowSize returns the size of the window held by the packet queue.
-// func (queue *packetQueue) WindowSize() uint24 {
-// 	return queue.highest - queue.lowest
-// }
+// WindowSize returns the size of the window held by the packet queue.
+fn (queue PacketQueue) window_size() U24 {
+	return queue.highest - queue.lowest
+}
+
 struct DatagramQueue {
 mut:
 	lowest  u32
 	highest u32
-	queue []u32
+	queue   []u32
 	// todo Packet or sth here
 }
 

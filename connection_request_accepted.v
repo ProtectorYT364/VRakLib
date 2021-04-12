@@ -32,8 +32,9 @@ pub fn (mut r ConnectionRequestAccepted) decode(mut p Packet) {
 	r.client_address = b.get_address()
 	println(r.client_address)
 	b.get_bytes(2)
-	for i in 0 .. 20 {
+	for i in 0..10 {//todo check if 10 or 20
 		// r.system_addresses[i] = b.get_address()
+		println('$i')
 		r.system_addresses << b.get_address()
 		println(r.system_addresses[r.system_addresses.len - 1])
 

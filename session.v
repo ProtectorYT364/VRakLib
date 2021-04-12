@@ -21,7 +21,7 @@ enum State {
 
 struct TmpMapEncapsulatedPacket {
 mut:
-	m map[string]EncapsulatedPacket
+	m map[u32]EncapsulatedPacket
 }
 
 struct TmpMapInt {
@@ -49,7 +49,7 @@ mut: // This is Conn in go-raknet
 	state   State
 	// connecting
 	mtu_size u16
-	id       u64
+	id       u64//client id
 	split_id u32
 	// 0
 	send_seq_number u32
@@ -60,29 +60,27 @@ mut: // This is Conn in go-raknet
 	is_temporal        bool
 	// true
 	// packet_to_send                  []Datagram
-	datagram_queue DatagramQueue
 	is_active      bool
 	// false
-	ack_queue  map[string]u32
-	nack_queue map[string]u32
-	// maybe map[int]Datagram, key is seqNumber
-	// recovery_queue                  map[string]Datagram
+	ack_queue  map[u32]u32//todo array
+	nack_queue map[u32]u32//todo array
 	recovery_queue RecoveryQueue
-	split_packets  map[string]TmpMapEncapsulatedPacket
-	need_ack       map[string]TmpMapInt
+	send_queue PacketQueue
+	datagram_queue DatagramQueue
+	split_packets  map[u32]TmpMapEncapsulatedPacket
+	need_ack       map[u32]TmpMapInt
 	// u32?
-	send_queue_data       Datagram
 	window_start          u32
 	window_end            u32
 	highest_seq_number    u32
 	reliable_window_start int
 	reliable_window_end   int
-	reliable_window       map[string]bool
-	last_ping_time        f32
+	reliable_window       map[int]bool
+	last_ping_time        f32//TODO time
 	// -1
 	last_ping_measure int
 	// 1
-	internal_id int
+	internal_id int//TODO remove
 }
 
 fn new_session(session_manager SessionManager, address net.Addr, client_id u64, mtu_size u16, internal_id int) Session {
@@ -97,7 +95,6 @@ fn new_session(session_manager SessionManager, address net.Addr, client_id u64, 
 		address: address
 		mtu_size: mtu_size
 		id: client_id
-		send_queue_data: Datagram{}
 		internal_id: internal_id
 	}
 	return session
@@ -141,10 +138,10 @@ fn (mut s Session) send_datagram(mut d Datagram) {
 	}
 	d.sequence_number = s.send_seq_number
 	s.send_seq_number++
-	s.recovery_queue.put(d.sequence_number, d)
 
 	// d,
 	b := d.encode()
+	s.recovery_queue.put(d.sequence_number, d)
 	println(d)
 	s.send_packet(mut new_packet_from_bytebuffer(b, s.address))
 }
@@ -168,11 +165,11 @@ fn (mut s Session) send_ping(reliability byte) {
 }
 
 fn (mut s Session) send_queue() {
-	if s.send_queue_data.packets.len > 0 {
-		s.send_datagram(mut s.send_queue_data)
-		s.send_queue_data = Datagram{
-			sequence_number: u32(-1)
+	if s.send_queue.queue.len > 0 {
+		for bytes in s.send_queue.fetch(){
+			s.send_packet(mut new_packet(bytes, s.address))
 		}
+		//s.send_queue.clear()
 	}
 }
 
@@ -190,36 +187,39 @@ fn (mut s Session) add_to_queue(packet EncapsulatedPacket, flags byte) {
 	println('ADD TO QUEUE Packet: $packet Flags: $flags')
 	mut p := packet
 	priority := flags & 0x07
-	if p.need_ack && p.message_index != u32(-1) {
-		mut arr := s.need_ack[p.identifier_ack.str()]
-		arr.m[p.message_index.str()] = int(p.message_index)
-	}
-	length := s.send_queue_data.get_total_length()
-	if u32(length) + p.get_length() > u32(s.mtu_size - u16(36)) {
-		println('too long')
-		s.send_queue()
-	}
-	if p.need_ack {
-		println('need ack')
-		s.send_queue_data.packets << p
-		p.need_ack = false
-	} else {
-		println('does not need ack')
-		s.send_queue_data.packets << p
-	}
+	// if p.need_ack && p.message_index != u32(-1) {
+	// 	mut arr := s.need_ack[p.identifier_ack]
+	// 	arr.m[p.message_index] = int(p.message_index)
+	// }
 	if priority == priority_immediate {
 		println('prio immediate')
 		s.send_queue()
+		return
+	}//TODO finish
+	//TODO find a way to check this again!
+	/* length := s.send_queue.get_total_length()
+	if u32(length) + p.get_length() > u32(s.mtu_size - u16(36)) {
+		println('too long')
+		s.send_queue()
+	} */
+	if p.need_ack {
+		println('need ack')
+		s.send_queue.put(p.message_index, p.buffer)
+		p.need_ack = false
+	} else {
+		println('does not need ack')
+		s.send_queue.put(p.message_index, p.buffer)
 	}
 }
 
+//https://github.com/alejzeis/JRakLibPlus/blob/6241265b0f6cc9f528cd2a5fe8b0e4ac78a00e67/src/main/java/io/github/jython234/jraklibplus/server/Session.java#L186
 fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags byte) {
 	println('ADD ENCAPSULATED TO QUEUE $packet')
 	mut p := packet
 	p.need_ack = (flags & 0x09) != 0
 	println(p.need_ack)
 	if p.need_ack {
-		s.need_ack[p.identifier_ack.str()] = TmpMapInt{}
+		s.need_ack[u32(p.identifier_ack)] = TmpMapInt{}//TODO rewrite
 	}
 	if reliability_is_ordered(p.reliability) {
 		p.order_index = s.send_ordered_index[p.order_channel]
@@ -230,45 +230,54 @@ fn (mut s Session) add_encapsulated_to_queue(packet EncapsulatedPacket, flags by
 		s.send_sequenced_index[p.order_channel]++
 	}
 	max_size := u16(s.mtu_size) - u16(60)
+	
+		if reliability_is_reliable(p.reliability) {
+			p.message_index = s.message_index++
+		}
 	if p.length > max_size {
 		// mut buffers := []//byte{}
-		mut buffers := [][]byte{}
 		mut packet_buffers := p.buffer
-		for packet_buffers.len > 0 {
-			mut end := int(max_size)
-			if packet_buffers.len < end {
-				end = packet_buffers.len
-			}
-			println('End: $end')
-			buffers << packet_buffers[..end] // push to buffer
-			packet_buffers = packet_buffers[end..]
+		
+		//mut buffers := packet_buffers.split(s.mtu_size - u32(34))//TODO vlang has no array.split, workaround:
+		mut buffers := [][]byte{}
+		mut pb := packet_buffers.clone()
+		for pb.len > 0 {
+			buffers << pb[..s.mtu_size - u32(34)]
+			pb = pb[..s.mtu_size - u32(34)]
 		}
+
 		split_id := s.split_id % 65536
-		println('FULL BUFFERS $buffers')
+		s.split_id++
+		println('ALL BUFFERS $buffers')
 		for count, buffer in buffers {
-			mut encapsulated_packet := EncapsulatedPacket{}
-			encapsulated_packet.split_id = u16(split_id)
-			encapsulated_packet.has_split = true
-			encapsulated_packet.split_count = u32(buffers.len)
-			encapsulated_packet.reliability = p.reliability
-			encapsulated_packet.split_index = u32(count) // int
+			mut encapsulated_packet := EncapsulatedPacket{
+				split_id: u16(split_id)
+				has_split: true
+				split_count: u32(buffers.len)
+				reliability: p.reliability
+				split_index: u32(count) // int
+			}
 			encapsulated_packet.buffer << buffer // byte
-			encapsulated_packet.length = u16(encapsulated_packet.buffer.len)
-			println('Encap new is $encapsulated_packet')
-			if reliability_is_reliable(p.reliability) {
-				encapsulated_packet.message_index = s.message_index
-				s.message_index++
+			encapsulated_packet.length = u16(encapsulated_packet.buffer.len)//TODO remove encap length?
+			// if reliability_is_reliable(p.reliability) {
+			// 	encapsulated_packet.message_index = s.message_index
+			// 	s.message_index++
+			// }
+			if count > 0{
+				encapsulated_packet.message_index = s.message_index++
+			}else{
+				encapsulated_packet.message_index = p.message_index
 			}
 			encapsulated_packet.sequence_index = p.sequence_index
-			encapsulated_packet.order_channel = p.order_channel
-			encapsulated_packet.order_index = p.order_index
+			if reliability_is_ordered(flags){
+				encapsulated_packet.order_channel = p.order_channel
+				encapsulated_packet.order_index = p.order_index
+			}
+			println('Encap new is $encapsulated_packet')
 			s.add_to_queue(encapsulated_packet, flags | priority_immediate)
 		}
 	} else {
-		if reliability_is_reliable(p.reliability) {
-			p.message_index = s.message_index
-			s.message_index++
-		}
+		println('NO SPLIT $p')
 		s.add_to_queue(p, flags)
 	}
 }
@@ -291,6 +300,7 @@ fn (mut s Session) receive_datagram(d Datagram) {
 }
 
 fn (mut s Session) handle_datagram2(d Datagram) {
+	s.datagram_queue.put(d.sequence_number)
 	for _, packet in d.packets {
 		if packet.has_split {
 			println('Handle split packet $packet')
@@ -314,6 +324,10 @@ pub fn (mut s Session) handle_datagram(mut b ByteBuffer) {
 }
 
 pub fn (mut s Session) handle_packet(mut p Datagram) {
+	if s.state == .disconnected {return}
+
+	//s.last_update = time.now()
+
 	// p.decode()//TODO fix
 	println('HANDLE DATAGRAM PACKET $p')
 	mut ackpks := []u32{}
@@ -326,20 +340,20 @@ pub fn (mut s Session) handle_packet(mut p Datagram) {
 	println('Sending ACK $ack')
 	s.send_packet(mut new_packet_from_bytebuffer(b, s.address)) // TODO
 	if u32(p.sequence_number) < s.window_start || u32(p.sequence_number) > s.window_end
-		|| p.sequence_number.str() in s.ack_queue {
+		|| p.sequence_number in s.ack_queue {
 		// Received duplicate or out-of-window packet
 		return
 	}
-	if p.sequence_number.str() in s.nack_queue {
+	if p.sequence_number in s.nack_queue {
 		s.nack_queue.delete(p.sequence_number.str())
 	}
-	s.ack_queue[p.sequence_number.str()] = u32(p.sequence_number)
+	s.ack_queue[p.sequence_number] = u32(p.sequence_number)
 	if s.highest_seq_number < u32(p.sequence_number) {
 		s.highest_seq_number = u32(p.sequence_number)
 	}
 	if u32(p.sequence_number) == s.window_start {
 		for {
-			if s.window_start.str() in s.ack_queue {
+			if s.window_start in s.ack_queue {
 				s.window_end++
 				s.window_start++
 			} else {
@@ -349,8 +363,8 @@ pub fn (mut s Session) handle_packet(mut p Datagram) {
 	} else if u32(p.sequence_number) > s.window_start {
 		mut i := s.window_start
 		for i < u32(p.sequence_number) {
-			if !(i.str() in s.ack_queue) {
-				s.nack_queue[i.str()] = i
+			if !(i in s.ack_queue) {
+				s.nack_queue[i] = i
 			}
 			i++
 		}
@@ -368,18 +382,18 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 	if packet.split_count >= vraklib.max_split_size || packet.split_index >= vraklib.max_split_size {
 		return error('Invalid split packet part')
 	}
-	if !(packet.split_id.str() in s.split_packets) {
+	if !(packet.split_id in s.split_packets) {
 		if s.split_packets.len >= vraklib.max_split_size {
 			return error('Invalid split packet part')
 		}
 		mut tmp := TmpMapEncapsulatedPacket{}
-		tmp.m[packet.split_index.str()] = packet
-		s.split_packets[packet.split_id.str()] = tmp
+		tmp.m[packet.split_index] = packet
+		s.split_packets[packet.split_id] = tmp
 	} else {
-		mut tmp := s.split_packets[packet.split_id.str()]
-		tmp.m[packet.split_index.str()] = packet
+		mut tmp := s.split_packets[packet.split_id]
+		tmp.m[packet.split_index] = packet
 	}
-	if s.split_packets[packet.split_id.str()].m.len == packet.split_count {
+	if s.split_packets[packet.split_id].m.len == packet.split_count {
 		mut p := EncapsulatedPacket{}
 		mut buffer := []byte{}
 		p.reliability = packet.reliability
@@ -388,8 +402,8 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 		p.order_index = packet.order_index
 		p.order_channel = packet.order_channel
 		for i in 0 .. (int(packet.split_count) - 1) {
-			d := s.split_packets[packet.split_id.str()] // vraklib.TmpMapEncapsulatedPacket
-			buffer << d.m[i.str()].buffer // vraklib.EncapsulatedPacket.buffer//warning: initialization of 'unsigned char' from 'byteptr' {aka 'unsigned char *'} makes integer from pointer without a cast; note: (near initialization for '(anonymous)[0]')
+			d := s.split_packets[packet.split_id] // vraklib.TmpMapEncapsulatedPacket
+			buffer << d.m[u32(i)].buffer // vraklib.EncapsulatedPacket.buffer//warning: initialization of 'unsigned char' from 'byteptr' {aka 'unsigned char *'} makes integer from pointer without a cast; note: (near initialization for '(anonymous)[0]')
 			// i++
 		}
 		p.buffer = buffer
@@ -405,13 +419,13 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 	mut p := packet
 	if p.message_index != u32(-1) {
 		if p.message_index < s.reliable_window_start || p.message_index > s.reliable_window_end
-			|| p.message_index.str() in s.reliable_window {
+			|| int(p.message_index) in s.reliable_window {
 			return
 		}
-		s.reliable_window[p.message_index.str()] = true
+		s.reliable_window[int(p.message_index)] = true
 		if p.message_index == s.reliable_window_start {
 			for {
-				if s.reliable_window_start.str() in s.reliable_window {
+				if s.reliable_window_start in s.reliable_window {
 					s.reliable_window.delete(s.reliable_window_start.str())
 					s.reliable_window_end++
 					s.reliable_window_start++
@@ -484,21 +498,15 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 					// println(connection.p.buffer)
 					connection.decode(mut p)
 					println(connection)
-					saddr, port := net.split_address('127.0.0.1:$s.session_manager.server.address.port') or {
-						println(err)
-						return
-					} // ?
-					sys_addr := net.Addr{
-						saddr: saddr
-						port: port
-					}
+					//TODO add port checking option
+					
 					mut accepted := ConnectionRequestAccepted{
 						request_timestamp: connection.request_timestamp
 						// accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
 						// accepted_timestamp: timestamp()
-						accepted_timestamp: connection.request_timestamp
+						accepted_timestamp: connection.request_timestamp+1//TODO check delay
 						client_address: s.address
-						system_addresses: [s.session_manager.server.address, sys_addr]
+						system_addresses: [s.session_manager.server.address].repeat(10)
 					}
 					mut b := accepted.encode()
 					b.trim()
@@ -510,7 +518,7 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 					// DEBUG
 					mut pongd := ConnectionRequestAccepted{}
 					mut baf := new_packet(b.buffer, s.address)
-					println('BAF $baf')
+					println('DEBUG BAF $baf')
 					pongd.decode(mut baf)
 					println(pongd)
 					assert accepted.client_address.str() == pongd.client_address.str()
@@ -522,7 +530,6 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 					mut connection := NewIncomingConnection{}
 					pkg := new_packet_from_bytebuffer(buf, s.address)
 					connection.decode(mut pkg)
-					println(connection)
 					if connection.server_address.port == s.session_manager.socket.a.port
 						|| !s.session_manager.port_checking {
 						s.state = .connected
@@ -530,18 +537,27 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 						s.session_manager.open_session(s)
 						s.send_ping(reliability_unreliable)
 					}
-					println('NEW INCOMING CONNECTION')
+					println('NEW INCOMING CONNECTION $connection')
 				}
 			} else if pid == id_connected_ping {
 				mut ping := ConnectedPing{}
 				b := new_packet_from_bytebuffer(buf, s.address)
 				ping.decode(mut b)
 				println(ping)
+				//TODO pong
+				mut pong := ConnectedPong{
+					client_timestamp: ping.client_timestamp
+				}
+					mut bp := pong.encode()
+					bp.trim()
+					s.queue_connected_packet(new_packet_from_bytebuffer(bp, s.address),
+						reliability_unreliable, 0, priority_immediate)//TODO check prio
 			} else if pid == id_connected_pong {
 				mut pong := ConnectedPong{}
 				b := new_packet_from_bytebuffer(buf, s.address)
 				pong.decode(mut b)
 				println(pong)
+				s.last_ping_time = f32(pong.client_timestamp)
 			} else {
 				println('Unknown $pid $packet')
 			}

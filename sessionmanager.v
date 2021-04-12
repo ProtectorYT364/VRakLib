@@ -2,15 +2,15 @@ module vraklib
 
 import net
 import time
-import bstone
+import logger
 
 struct SessionManager {
 mut:
 	server             &VRakLib
 	socket             UdpSocket
-	sessions           map[string]Session
+	sessions           map[int]Session
 	session_by_address map[string]Session
-	shutdown           bool
+	run                bool = true
 	stopwatch          time.StopWatch
 	port_checking      bool
 	current_tick       i64
@@ -33,10 +33,6 @@ pub fn new_session_manager(r &VRakLib, socket UdpSocket) &SessionManager {
 	return sm
 }
 
-pub fn (s SessionManager) logger() shared bstone.Log {
-	return s.server.logger
-}
-
 fn (s SessionManager) get_raknet_time_ms() i64 {
 	return s.stopwatch.elapsed().milliseconds()
 }
@@ -52,27 +48,28 @@ pub fn (mut s SessionManager) start() {
 }
 
 pub fn (mut s SessionManager) stop() {
-	s.logger().log('Stopping SessionManager', .debug)
-	s.shutdown = true
-	s.logger().log('Shutdown listen socket', .debug)
+	logger.log('Stopping SessionManager', .debug)
+	s.run = false
+	logger.log('Shutdown listen socket', .debug)
 	s.socket.close()
 }
 
 fn (mut s SessionManager) listen_socket() {
-	for !s.server.shutdown {
+	for s.server.run {
 		// receive individual packets
 		mut p := s.socket.receive() or {
-			if s.server.shutdown {
+			if !s.server.run {
 				break
 			}
-			s.logger().log(err, .error)
+			logger.log(err.msg, .error)
 			continue
 		}
 		s.handle(mut p) or {
-			s.logger().log(err, .error)
+			logger.log(err.msg, .error)
 			continue
 		}
 	}
+	logger.log('Shutdown listen socket', .debug)
 }
 
 fn (mut s SessionManager) handle(mut p Packet) ? {
@@ -144,7 +141,7 @@ fn (mut s Session) handle_datagram(mut b ByteBuffer) {
 }*/
 
 fn (mut s SessionManager) tick_sessions() {
-	for !s.server.shutdown {
+	for s.server.run {
 		/*
 		if s.shutdown {
 			return
@@ -161,7 +158,7 @@ fn (mut s SessionManager) tick_sessions() {
 
 		// s.current_tick++
 	}
-	s.logger().log('Shutdown tick sessions', .debug)
+	logger.log('Shutdown tick sessions', .debug)
 }
 
 fn (s SessionManager) get_session_by_address(address net.Addr) Session {
@@ -174,7 +171,7 @@ fn (s SessionManager) session_exists(address net.Addr) bool {
 
 fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_size u16) Session {
 	for {
-		if s.next_session_id.str() in s.sessions {
+		if s.next_session_id in s.sessions {
 			s.next_session_id++
 			s.next_session_id &= 0x7fffffff
 		} else {
@@ -182,9 +179,9 @@ fn (mut s SessionManager) create_session(address net.Addr, client_id u64, mtu_si
 		}
 	}
 	session := new_session(s, address, client_id, mtu_size, s.next_session_id)
-	s.sessions[s.next_session_id.str()] = session
+	s.sessions[s.next_session_id] = session
 	s.session_by_address[address.str()] = session
-	return s.sessions[s.next_session_id.str()]
+	return s.sessions[s.next_session_id]
 }
 
 fn (s SessionManager) send_packet(p Packet) {
