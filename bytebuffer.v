@@ -101,7 +101,6 @@ pub fn (mut b ByteBuffer) put_short(v i16) {
 	//     assert b.position + u32(sizeof(i16)) <= b.len()
 	mut vv := v
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		vv = i16(swap16(u16(v)))
 	}
 	unsafe {
@@ -118,7 +117,6 @@ pub fn (mut b ByteBuffer) put_ushort(v u16) {
 	mut vv := v
 	mut bytes := []byte{len: 2}
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		binary.big_endian_put_u16(mut bytes, vv)
 	} else {
 		binary.little_endian_put_u16(mut bytes, vv)
@@ -152,7 +150,6 @@ pub fn (mut b ByteBuffer) put_int(v int) {
 	//     assert b.position + u32(sizeof(int)) <= b.len()
 	mut vv := v
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		vv = int(swap32(u32(v)))
 	}
 	unsafe {
@@ -169,7 +166,6 @@ pub fn (mut b ByteBuffer) put_uint(v u32) {
 	mut vv := v
 	mut bytes := []byte{len: 4}
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		binary.big_endian_put_u32(mut bytes, vv)
 	} else {
 		binary.little_endian_put_u32(mut bytes, vv)
@@ -181,7 +177,6 @@ pub fn (mut b ByteBuffer) put_long(v i64) {
 	//     assert b.position + u32(sizeof(i64)) <= b.len()
 	mut vv := v
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		vv = i64(swap64(u64(v)))
 	}
 	unsafe {
@@ -202,7 +197,6 @@ pub fn (mut b ByteBuffer) put_ulong(v u64) {
 	mut vv := v
 	mut bytes := []byte{len: 8}
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		binary.big_endian_put_u64(mut bytes, vv)
 	} else {
 		binary.little_endian_put_u64(mut bytes, vv)
@@ -216,7 +210,6 @@ pub fn (mut b ByteBuffer) put_float(v f32) {
 	//     assert b.position + u32(sizeof(f32)) <= b.len()
 	mut vv := v
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		vv = swapf(v)
 	}
 	as_int := unsafe { &u32(&vv) }
@@ -233,7 +226,6 @@ pub fn (mut b ByteBuffer) put_double(v f64) {
 	//     assert b.position + u32(sizeof(f64)) <= b.len()
 	mut vv := v
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		vv = swapd(v)
 	}
 	as_int := unsafe { &u64(&vv) }
@@ -309,7 +301,6 @@ pub fn (mut b ByteBuffer) get_short() i16 {
 	mut v := unsafe { i16(b.buffer[b.position + u32(1)]) | (i16(b.buffer[b.position]) << i16(8)) }
 	b.position += u32(sizeof(i16))
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		v = i16(swap16(u16(v)))
 	}
 	return v
@@ -318,7 +309,6 @@ pub fn (mut b ByteBuffer) get_short() i16 {
 pub fn (mut b ByteBuffer) get_ushort() u16 {
 	assert b.position + u32(sizeof(u16)) <= b.len()
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		mut v := binary.big_endian_u16(b.buffer[b.position..(b.position + 2)])
 		b.position += 2
 		return v
@@ -357,7 +347,6 @@ pub fn (mut b ByteBuffer) get_int() int {
 	}
 	b.position += u32(sizeof(int))
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		v = int(swap32(u32(v)))
 	}
 	return v
@@ -366,7 +355,6 @@ pub fn (mut b ByteBuffer) get_int() int {
 pub fn (mut b ByteBuffer) get_uint() u32 {
 	assert b.position + u32(sizeof(u32)) <= b.len()
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		mut v := binary.big_endian_u32(b.buffer[b.position..(b.position + 4)])
 		b.position += 4
 		return v
@@ -387,7 +375,6 @@ pub fn (mut b ByteBuffer) get_long() i64 {
 	}
 	b.position += u32(sizeof(i64))
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		v = i64(swap64(u64(v)))
 	}
 	return v
@@ -396,7 +383,6 @@ pub fn (mut b ByteBuffer) get_long() i64 {
 pub fn (mut b ByteBuffer) get_ulong() u64 {
 	assert b.position + u32(sizeof(u64)) <= b.len()
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		mut v := binary.big_endian_u64(b.buffer[b.position..(b.position + 8)])
 		b.position += 8
 		return v
@@ -417,7 +403,6 @@ pub fn (mut b ByteBuffer) get_float() f32 {
 	b.position += u32(sizeof(f32))
 	mut vv := *ptr
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		vv = swapf(vv)
 	}
 	return vv
@@ -435,7 +420,6 @@ pub fn (mut b ByteBuffer) get_double() f64 {
 	b.position += u32(sizeof(f64))
 	mut vv := *ptr
 	if b.endianness == Endianness.big {
-		println('ENDIANNESS')
 		vv = swapd(vv)
 	}
 	return vv
@@ -516,37 +500,18 @@ pub fn (b ByteBuffer) print() {
 }
 
 pub fn swap16(v u16) u16 {
-	println('Swap16 $v')
-	println(v.hex())
-
-	//	return
-	c := bits.reverse_bytes_16(v)
-	println(c.hex())
-	return c
+	return bits.reverse_bytes_16(v)
 }
 
 pub fn swap32(v u32) u32 {
-	println('Swap32 $v')
-	println(v.hex())
-
-	//	return
-	c := bits.reverse_bytes_32(v)
-	println(c.hex())
-	return c
+	return bits.reverse_bytes_32(v)
 }
 
 pub fn swap64(v u64) u64 {
-	println('Swap64 $v')
-	println(v.hex())
-
-	//	return
-	c := bits.reverse_bytes_64(v)
-	println(c.hex())
-	return c
+	return bits.reverse_bytes_64(v)
 }
 
 pub fn swapf(f f32) f32 {
-	println('SwapF $f')
 	assert sizeof(u32) == sizeof(f32)
 	as_int := unsafe { &u32(&f) }
 	v := swap32(u32(*as_int))
@@ -555,7 +520,6 @@ pub fn swapf(f f32) f32 {
 }
 
 pub fn swapd(d f64) f64 {
-	println('SwapD $d')
 	assert sizeof(u64) == sizeof(f64)
 	as_int := unsafe { &u64(&d) }
 	v := swap64(u64(*as_int))
