@@ -98,7 +98,7 @@ fn (mut s SessionManager) handle(mut p Packet) ? {
 	}
 
 	// TODO else
-	println('pog')
+	println('pog (handle online message)')
 	mut session := s.get_session_by_address(p.address) // online message
 	header_flags := b.get_byte()
 	println(b.buffer.hex())
@@ -108,10 +108,13 @@ fn (mut s SessionManager) handle(mut p Packet) ? {
 	}
 
 	if header_flags & bitflag_ack != 0 {
+	println('ack')
 		s.handle_ack(mut p)
 	} else if header_flags & bitflag_nack != 0 {
+	println('nack')
 		s.handle_nack(mut p)
 	} else { // handle datagram
+	println('datagram')
 		session.handle_datagram(mut &b)
 	}
 }
@@ -119,7 +122,7 @@ fn (mut s SessionManager) handle(mut p Packet) ? {
 fn (mut s SessionManager) handle_ack(mut p Packet) {
 	mut ack := Ack{}
 	ack.decode(mut p)
-	println('handle_ack $ack')
+	println('todo handle_ack $ack')
 
 	// TODO remove packet from recovery
 }
@@ -127,7 +130,7 @@ fn (mut s SessionManager) handle_ack(mut p Packet) {
 fn (mut s SessionManager) handle_nack(mut p Packet) {
 	mut nack := Nack{}
 	nack.decode(mut p)
-	println('handle_nack $nack')
+	println('todo handle_nack $nack')
 
 	// TODO resend packets from recovery
 }

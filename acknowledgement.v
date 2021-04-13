@@ -229,7 +229,7 @@ pub fn (mut r Ack) encode() ByteBuffer {
 	//the code below splits the packets into [n,n+1..] groups
 	mut buf := r.packets.clone()
 	mut pointer := 0
-	mut parts := [][]int{}
+	mut parts := [][]u32{}
 
 	for {
 		if buf.len <= 2 {
@@ -249,27 +249,26 @@ pub fn (mut r Ack) encode() ByteBuffer {
 		pointer = 0
 	}
 
-	mut stream := new_bytebuffer([]byte{len: default_buffer_size}) // TODO without len
+	mut abuf := new_bytebuffer([]byte{len: default_buffer_size}) // TODO without len
 	
 	for sets in parts{
 		first_packet := sets[0]
 		last_packet := sets[sets.len]
 		if sets.len == 1{
 			println('ack single $last_packet')
-				stream.put_byte(1)//single packet byte
-				stream.put_ltriad(last_packet)
+				abuf.put_byte(1)//single packet byte
+				abuf.put_ltriad(last_packet)
 			} else {
 			println('ack range $first_packet $last_packet')
-				stream.put_byte(0)//packet range byte
-				stream.put_ltriad(first_packet)
-				stream.put_ltriad(last_packet)
+				abuf.put_byte(0)//packet range byte
+				abuf.put_ltriad(first_packet)
+				abuf.put_ltriad(last_packet)
 			}
 		}
-	}
 
-	stream.trim()
+	abuf.trim()
 	b.put_short(i16(parts.len))
-	b.put_bytes(stream.buffer)
+	b.put_bytes(abuf.buffer)
 	return b
 }
 

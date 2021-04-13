@@ -155,6 +155,16 @@ fn (s Session) send_packet(mut p Packet) { // TODO change to RaklibPacket?
 	s.session_manager.send_packet(p)
 }
 
+fn (mut s Session) send_ack(packets []u32) {
+	mut ack := Ack{
+		packets: packets
+	}
+	mut b := ack.encode()
+	b.trim()
+	println('Sending ACK $ack')
+	s.send_packet(mut new_packet_from_bytebuffer(b, s.address)) // TODO
+}
+
 fn (mut s Session) send_ping(reliability byte) {
 	mut packet := ConnectedPing{
 		client_timestamp: u64(s.session_manager.get_raknet_time_ms())
@@ -332,13 +342,7 @@ pub fn (mut s Session) handle_packet(mut p Datagram) {
 	println('HANDLE DATAGRAM PACKET $p')
 	mut ackpks := []u32{}
 	ackpks << p.sequence_number
-	mut ack := Ack{
-		packets: ackpks
-	}
-	mut b := ack.encode()
-	b.trim()
-	println('Sending ACK $ack')
-	s.send_packet(mut new_packet_from_bytebuffer(b, s.address)) // TODO
+	s.send_ack(ackpks)
 	if u32(p.sequence_number) < s.window_start || u32(p.sequence_number) > s.window_end
 		|| p.sequence_number in s.ack_queue {
 		// Received duplicate or out-of-window packet
