@@ -343,9 +343,10 @@ pub fn (mut s Session) handle_packet(mut p Datagram) {
 	mut ackpks := []u32{}
 	ackpks << p.sequence_number
 	s.send_ack(ackpks)
-	if u32(p.sequence_number) < s.window_start || u32(p.sequence_number) > s.window_end
+	if u32(p.sequence_number) < s.window_start /* || u32(p.sequence_number) > s.window_end */
 		|| p.sequence_number in s.ack_queue {
 		// Received duplicate or out-of-window packet
+		println('Received duplicate or out-of-window packet')
 		return
 	}
 	if p.sequence_number in s.nack_queue {
@@ -373,7 +374,8 @@ pub fn (mut s Session) handle_packet(mut p Datagram) {
 			i++
 		}
 	} else {
-		// received packet before widnow start
+		// received packet before window start
+		println('received packet before window start')
 		return
 	}
 	for pp in p.packets {
@@ -510,7 +512,7 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 						// accepted_timestamp: timestamp()
 						accepted_timestamp: connection.request_timestamp+1//TODO check delay
 						client_address: s.address
-						system_addresses: [s.session_manager.server.address].repeat(10)
+						system_addresses: [s.session_manager.server.address].repeat(20)
 					}
 					mut b := accepted.encode()
 					b.trim()
@@ -520,14 +522,14 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 					println(accepted)
 
 					// DEBUG
-					mut pongd := ConnectionRequestAccepted{}
-					mut baf := new_packet(b.buffer, s.address)
-					println('DEBUG BAF $baf')
-					pongd.decode(mut baf)
-					println(pongd)
-					assert accepted.client_address.str() == pongd.client_address.str()
-					assert accepted.request_timestamp == pongd.request_timestamp
-					assert accepted.accepted_timestamp == pongd.accepted_timestamp
+					// mut pongd := ConnectionRequestAccepted{}
+					// mut baf := new_packet(b.buffer, s.address)
+					// println('DEBUG BAF $baf')
+					// pongd.decode(mut baf)
+					// println(pongd)
+					// assert accepted.client_address.str() == pongd.client_address.str()
+					// assert accepted.request_timestamp == pongd.request_timestamp
+					// assert accepted.accepted_timestamp == pongd.accepted_timestamp
 
 					// TODO assert for server ips
 				} else if pid == id_new_incoming_connection {

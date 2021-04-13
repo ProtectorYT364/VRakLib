@@ -249,11 +249,11 @@ pub fn (mut r Ack) encode() ByteBuffer {
 		pointer = 0
 	}
 
-	mut abuf := new_bytebuffer([]byte{len: default_buffer_size}) // TODO without len
+	mut abuf := empty_buffer()
 	
 	for sets in parts{
 		first_packet := sets[0]
-		last_packet := sets[sets.len]
+		last_packet := sets[sets.len-1]
 		if sets.len == 1{
 			println('ack single $last_packet')
 				abuf.put_byte(1)//single packet byte
