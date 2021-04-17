@@ -38,7 +38,7 @@ fn (mut queue PacketQueue) fetch() ([][]byte) {
 			break
 		}
 		packet := queue.queue[u32(index)]
-		queue.queue.delete(index.str())
+		queue.queue.delete(u32(index))
 		packets << packet
 		queue.lowest = index
 	}
@@ -131,13 +131,13 @@ fn (mut queue RecoveryQueue) take(index u32) (RaklibPacketType, bool) {
 	ok := index in queue.queue
 	val := queue.queue[index]
 	if ok {
-		queue.queue.delete(index.str())
+		queue.queue.delete(index)
 		queue.delays[queue.ptr] = time.now() - queue.timestamps[index]
 		queue.ptr++
 		if queue.ptr == vraklib.delay_record_count {
 			queue.ptr = 0
 		}
-		queue.timestamps.delete(index.str())
+		queue.timestamps.delete(index)
 	}
 	return val, ok
 }
@@ -147,8 +147,8 @@ fn (mut queue RecoveryQueue) take(index u32) (RaklibPacketType, bool) {
 fn (mut queue RecoveryQueue) take_without_delay_add(index u32) (RaklibPacketType, bool) {
 	val := queue.queue[index]
 	if index in queue.queue {
-		queue.queue.delete(index.str())
-		queue.timestamps.delete(index.str())
+		queue.queue.delete(index)
+		queue.timestamps.delete(index)
 	} else {
 		return val, false
 	}

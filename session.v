@@ -134,7 +134,7 @@ fn (mut s Session) send_datagram(mut d Datagram) {
 
 	// mut d := datagram
 	if d.sequence_number != u32(-1) {
-		s.recovery_queue.queue.delete(d.sequence_number.str())
+		s.recovery_queue.queue.delete(d.sequence_number)
 	}
 	d.sequence_number = s.send_seq_number
 	s.send_seq_number++
@@ -350,7 +350,7 @@ pub fn (mut s Session) handle_packet(mut p Datagram) {
 		return
 	}
 	if p.sequence_number in s.nack_queue {
-		s.nack_queue.delete(p.sequence_number.str())
+		s.nack_queue.delete(p.sequence_number)
 	}
 	s.ack_queue[p.sequence_number] = u32(p.sequence_number)
 	if s.highest_seq_number < u32(p.sequence_number) {
@@ -414,7 +414,7 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 		}
 		p.buffer = buffer
 		p.length = u16(buffer.len)
-		s.split_packets.delete(packet.split_id.str())
+		s.split_packets.delete(packet.split_id)
 		return p
 	}
 	return error('')
@@ -432,7 +432,7 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 		if p.message_index == s.reliable_window_start {
 			for {
 				if s.reliable_window_start in s.reliable_window {
-					s.reliable_window.delete(s.reliable_window_start.str())
+					s.reliable_window.delete(s.reliable_window_start)
 					s.reliable_window_end++
 					s.reliable_window_start++
 				} else {
