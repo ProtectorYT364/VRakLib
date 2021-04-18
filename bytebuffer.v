@@ -446,8 +446,6 @@ pub fn (mut b ByteBuffer) put_address(address net.Addr) {
 	// if address.version == 4 {
 	numbers := address.saddr.split('.')
 	for num in numbers {
-		println(num)
-		println(byte(~num.int() & 0xFF))
 		b.put_byte(byte(~num.int() & 0xFF))
 	}
 	b.put_ushort(u16(address.port))
@@ -458,19 +456,15 @@ pub fn (mut b ByteBuffer) put_address(address net.Addr) {
 
 pub fn (mut b ByteBuffer) get_address() net.Addr {
 	ver := b.get_byte()
-	println(ver)
 	if ver == 4 {
 		ip_bytes := b.get_bytes(4)
 		port := b.get_ushort() // u16(address.port)
-		println(ip_bytes.str()) // TODO
-		println(port.str()) // TODO
 		// HACK
 		address := net.Addr{
 			saddr: ((-ip_bytes[0] - 1) & 0xff).str() + '.' + ((-ip_bytes[1] - 1) & 0xff).str() +
 				'.' + ((-ip_bytes[2] - 1) & 0xff).str() + '.' + ((-ip_bytes[3] - 1) & 0xff).str()
 			port: port
 		}
-		println(address)
 		return address
 	} else {
 		panic('Only IPv4 is supported for now')

@@ -136,8 +136,8 @@ fn (mut s Session) send_datagram(mut d Datagram) {
 	if d.sequence_number != u32(-1) {
 		s.recovery_queue.queue.delete(d.sequence_number)
 	}
-	d.sequence_number = s.send_seq_number
-	s.send_seq_number++
+	//d.sequence_number = s.send_seq_number
+	//s.send_seq_number++
 
 	// d,
 	b := d.encode()
@@ -183,13 +183,45 @@ fn (mut s Session) send_queue() {
 	}
 }
 
-fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order_channel int, flag byte) {
-	mut encapsulated := EncapsulatedPacket{
+fn (mut s Session) send_datagram_route(enp []EncapsulatedPacket) {
+	mut e := enp.clone()
+	println('send datagram rout, encap: $e')
+
+	order_index := s.send_ordered_index[0]
+	s.send_ordered_index[0]++
+	//split id increase here when implemented
+	sequence_number := s.send_seq_number
+	s.send_seq_number++
+	//split id increase here when implemented
+	message_index := s.message_index
+	s.message_index++
+
+	for mut en in e {
+		//en.sequence_index = sequence_number
+		en.message_index = message_index
+		en.order_index = order_index
+	}
+
+	mut d := Datagram{
+		packets: e
+		sequence_number: sequence_number
+	}
+
+	println('Sending datagram $d')
+	s.send_datagram(mut d)
+}
+
+fn (mut s Session) make_encap(packet Packet, reliability byte, order_channel int, flag byte) EncapsulatedPacket{
+	return EncapsulatedPacket{
 		buffer: packet.buffer
 		length: u16(packet.buffer.len)
 		reliability: reliability
 		order_channel: order_channel
 	}
+}
+
+fn (mut s Session) queue_connected_packet(packet Packet, reliability byte, order_channel int, flag byte) {
+	mut encapsulated := s.make_encap(packet, reliability, order_channel, flag)
 	s.add_encapsulated_to_queue(encapsulated, flag)
 }
 
@@ -421,47 +453,59 @@ fn (mut s Session) handle_split(packet EncapsulatedPacket) ?EncapsulatedPacket {
 }
 
 fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
-	println('HANDLE ENCAPSULATED')
 	mut p := packet
+	println('HANDLE ENCAPSULATED $p')
 	if p.message_index != u32(-1) {
+		println('not -1')
 		if p.message_index < s.reliable_window_start || p.message_index > s.reliable_window_end
 			|| int(p.message_index) in s.reliable_window {
+		println('index out of window')
 			return
 		}
 		s.reliable_window[int(p.message_index)] = true
 		if p.message_index == s.reliable_window_start {
+		println('first packet in index')
 			for {
 				if s.reliable_window_start in s.reliable_window {
+		println('is in window')
 					s.reliable_window.delete(s.reliable_window_start)
 					s.reliable_window_end++
 					s.reliable_window_start++
 				} else {
+		println('is not in window')
 					break
 				}
 			}
 		}
 	}
 	if packet.has_split {
+		println('handle split')
 		pp := s.handle_split(packet) or { return }
 		p = pp
 	}
 	if reliability_is_sequenced_or_ordered(packet.reliability)
 		&& (packet.order_channel < 0 || packet.order_channel >= vraklib.channel_count) {
 		// Invalid packet
+		println('Invalid packet')
 		return
 	}
 	if reliability_is_sequenced(packet.reliability) {
 		if packet.sequence_index < s.receive_sequenced_highest_index[packet.order_channel]
 			|| packet.order_index < s.receive_ordered_index[packet.order_channel] {
 			// too old sequenced packet
+		println('too old sequenced packet')
 			return
 		}
 		s.receive_sequenced_highest_index[packet.order_channel] = int(packet.sequence_index + 1)
+
+		println('handle route')
 		s.handle_encapsulated_packet_route(packet)
 	} else if reliability_is_ordered(packet.reliability) {
+		println('ordered')
 		if packet.order_index == s.receive_ordered_index[packet.order_channel] {
 			s.receive_sequenced_highest_index[packet.order_index] = 0
 			s.receive_ordered_index[packet.order_channel] = int(packet.order_index + 1)
+		println('handle route 2')
 			s.handle_encapsulated_packet_route(packet)
 			mut i := s.receive_ordered_index[packet.order_channel]
 			for {
@@ -470,19 +514,23 @@ fn (mut s Session) handle_encapsulated_packet(packet EncapsulatedPacket) {
 				// break
 				// }
 				dd := s.receive_ordered_packets[packet.order_channel]
+		println('handle route 3')
 				s.handle_encapsulated_packet_route(dd[i])
 				s.receive_ordered_packets[packet.order_channel].delete(i)
 				i++
 			}
 			s.receive_ordered_index[packet.order_channel] = i
 		} else if packet.order_index > s.receive_ordered_index[packet.order_channel] {
+		println('wat')
 			mut d := s.receive_ordered_packets[packet.order_channel]
 			d[packet.order_index] = packet
 		} else {
 			// duplicate/alredy receive packet
+		println('duplicate/alredy receive packet')
 		}
 	} else {
 		// not ordered or sequenced
+		println('not ordered or sequenced')
 		s.handle_encapsulated_packet_route(packet)
 	}
 }
@@ -510,16 +558,17 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 						request_timestamp: connection.request_timestamp
 						// accepted_timestamp: u64(s.session_manager.get_raknet_time_ms())
 						// accepted_timestamp: timestamp()
-						accepted_timestamp: connection.request_timestamp+1//TODO check delay
+						accepted_timestamp: connection.request_timestamp//TODO check delay
 						client_address: s.address
 						system_addresses: [s.session_manager.server.address].repeat(20)
 					}
 					mut b := accepted.encode()
 					b.trim()
-					s.queue_connected_packet(new_packet_from_bytebuffer(b, s.address),
+					e := s.make_encap(new_packet_from_bytebuffer(b, s.address),
 						reliability_unreliable, 0, priority_immediate)
 					println(b.buffer.hex())
 					println(accepted)
+					s.send_datagram_route([e])
 
 					// DEBUG
 					// mut pongd := ConnectionRequestAccepted{}
@@ -533,19 +582,22 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 
 					// TODO assert for server ips
 				} else if pid == id_new_incoming_connection {
+		println('new incoming connection')
 					mut connection := NewIncomingConnection{}
-					pkg := new_packet_from_bytebuffer(buf, s.address)
-					connection.decode(mut pkg)
+					p := new_packet_from_bytebuffer(buf, s.address)
+					connection.decode(mut p)
 					if connection.server_address.port == s.session_manager.socket.a.port
 						|| !s.session_manager.port_checking {
 						s.state = .connected
 						s.is_temporal = false
+		println('open session')
 						s.session_manager.open_session(s)
 						s.send_ping(reliability_unreliable)
 					}
 					println('NEW INCOMING CONNECTION $connection')
 				}
 			} else if pid == id_connected_ping {
+		println('connected ping')
 				mut ping := ConnectedPing{}
 				b := new_packet_from_bytebuffer(buf, s.address)
 				ping.decode(mut b)
@@ -556,8 +608,9 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				}
 					mut bp := pong.encode()
 					bp.trim()
-					s.queue_connected_packet(new_packet_from_bytebuffer(bp, s.address),
+					e := s.make_encap(new_packet_from_bytebuffer(bp, s.address),
 						reliability_unreliable, 0, priority_immediate)//TODO check prio
+					s.send_datagram_route([e])
 			} else if pid == id_connected_pong {
 				mut pong := ConnectedPong{}
 				b := new_packet_from_bytebuffer(buf, s.address)
@@ -568,9 +621,11 @@ fn (mut s Session) handle_encapsulated_packet_route(packet EncapsulatedPacket) {
 				println('Unknown $pid $packet')
 			}
 		} else if s.state == .connected {
+		println('is connected, handle encap')
 			s.session_manager.handle_encapsulated(s, packet)
 		} else {
 			// Received packet before connection
+		println('Received packet before connection')
 		}
 	}
 }
